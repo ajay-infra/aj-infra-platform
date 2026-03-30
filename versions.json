@@ -1,0 +1,17 @@
+{
+  "_comment": "Single source of truth for all pinned versions. Keep in sync with variables.tf defaults.",
+  "terraform": "1.7.5",
+  "providers": {
+    "aws":  "5.100.0",
+    "helm": "2.12.1"
+  },
+  "helm_charts": {
+    "cilium":           "1.17.0",
+    "aws-lbc":          "1.10.0",
+    "karpenter":        "1.2.0",
+    "cert-manager":     "v1.16.2",
+    "external-secrets": "0.11.0",
+    "metrics-server":   "3.12.2"
+  },
+  "kubernetes": "1.35"
+}
