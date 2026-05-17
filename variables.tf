@@ -93,6 +93,32 @@ variable "install_metrics_server" {
   default = true
 }
 
+variable "install_arc" {
+  type        = bool
+  description = "Install Actions Runner Controller — self-hosted GitHub Actions runners on EKS."
+  default     = false
+}
+
+# ── ARC ───────────────────────────────────────────────────────────────────────
+
+variable "chart_version_arc_controller" {
+  type        = string
+  description = "ARC gha-runner-scale-set-controller Helm chart version."
+  default     = "0.9.3"
+}
+
+variable "tf_state_bucket" {
+  type        = string
+  description = "S3 bucket name holding Terraform state — ARC runner IAM policy grants access."
+  default     = ""
+}
+
+variable "tf_lock_table" {
+  type        = string
+  description = "DynamoDB table name for Terraform state locking — ARC runner IAM policy grants access."
+  default     = "tf-locks-central"
+}
+
 # ── Tags ──────────────────────────────────────────────────────────────────────
 
 variable "team" {
