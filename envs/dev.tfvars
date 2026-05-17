@@ -16,6 +16,12 @@ install_karpenter        = false
 install_cert_manager     = true
 install_external_secrets = true
 install_metrics_server   = true
+install_arc              = false # enable once GitHub App is created in the org
+
+# ARC
+chart_version_arc_controller = "0.9.3"
+tf_state_bucket              = "ai-search-tf-state" # replace with real bucket
+tf_lock_table                = "tf-locks-central"
 
 team        = "infra-core"
 cost_center = "infra-2026-q1"
