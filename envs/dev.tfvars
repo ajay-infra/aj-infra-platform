@@ -1,7 +1,7 @@
 environment  = "dev"
 color        = "blue"
 aws_region   = "us-east-1"
-state_bucket = "ai-search-tf-state"   # replace with real bucket
+state_bucket = "ai-search-tf-state" # replace with real bucket
 
 # Chart versions — keep in sync with versions.json
 chart_version_cilium           = "1.17.0"
