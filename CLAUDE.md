@@ -22,6 +22,28 @@ Also creates:
 
 ---
 
+## Where It Fits
+
+**Architecture layer:** L5 — K8s Add-ons
+**Provisioned by:** `aj-infra-release` — `provision-eks.yml` (Stage 3, after EKS)
+**Depends on:** `aj-tf-module-eks` state (reads via `data.terraform_remote_state.eks`)
+**State key pattern:** `workload/<mode>/<env>/aj-infra-platform/terraform.tfstate`
+
+## How to Use
+
+Triggered automatically as Stage 3 of `provision-eks.yml` after the EKS stage completes. Requires a live EKS cluster (Helm provider calls `aws eks get-token`).
+
+tfvars: `aj-infra-release/envs/workload/<mode>/<env>/common.tfvars` (passed via `-var-file`); color injected as `-var="color=..."` by the pipeline.
+
+GitHub secrets required:
+- `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`
+
+Current Helm releases installed: Cilium, AWS LBC, Karpenter, cert-manager, ESO, metrics-server, OPA Gatekeeper.
+
+Pending additions (Group 3 roadmap item): KEDA, Kong (KIC), external-dns, Falcon sensor, Cloudability agent, Alloy (k8s-monitoring), ArgoCD agent registration.
+
+---
+
 ## Apply Order (two-stage)
 
 ```
