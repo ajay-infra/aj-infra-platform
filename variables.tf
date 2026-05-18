@@ -12,11 +12,11 @@ variable "environment" {
 
 variable "color" {
   type        = string
-  description = "Active cluster color: blue | green"
+  description = "Active cluster color: blue | green | standalone"
   default     = "blue"
   validation {
-    condition     = contains(["blue", "green"], var.color)
-    error_message = "color must be 'blue' or 'green'."
+    condition     = contains(["blue", "green", "standalone"], var.color)
+    error_message = "color must be 'blue', 'green', or 'standalone'."
   }
 }
 
@@ -99,13 +99,69 @@ variable "install_arc" {
   default     = false
 }
 
-# ── ARC ───────────────────────────────────────────────────────────────────────
+variable "install_gatekeeper" {
+  type        = bool
+  description = "Install OPA Gatekeeper admission controller. ConstraintTemplates + Constraints live in k8s-manifests."
+  default     = true
+}
+
+variable "install_keda" {
+  type        = bool
+  description = "Install KEDA event-driven autoscaler. ScaledObjects live in k8s-manifests."
+  default     = true
+}
+
+variable "install_kong" {
+  type        = bool
+  description = "Install Kong Ingress Controller. KongPlugin CRDs live in k8s-manifests."
+  default     = true
+}
+
+variable "install_external_dns" {
+  type        = bool
+  description = "Install external-dns for automated Route53 record management."
+  default     = true
+}
+
+variable "install_falcon" {
+  type        = bool
+  description = "Install CrowdStrike Falcon sensor DaemonSet. Requires ESO secret 'falcon-credentials' in falcon-system namespace."
+  default     = false
+}
+
+# ── Chart versions ────────────────────────────────────────────────────────────
 
 variable "chart_version_arc_controller" {
-  type        = string
-  description = "ARC gha-runner-scale-set-controller Helm chart version."
-  default     = "0.9.3"
+  type    = string
+  default = "0.9.3"
 }
+
+variable "chart_version_gatekeeper" {
+  type    = string
+  default = "v3.17.1"
+}
+
+variable "chart_version_keda" {
+  type    = string
+  default = "2.16.0"
+}
+
+variable "chart_version_kong" {
+  type    = string
+  default = "0.4.4"
+}
+
+variable "chart_version_external_dns" {
+  type    = string
+  default = "1.15.0"
+}
+
+variable "chart_version_falcon" {
+  type    = string
+  default = "1.25.0"
+}
+
+# ── ARC ───────────────────────────────────────────────────────────────────────
 
 variable "tf_state_bucket" {
   type        = string
@@ -113,10 +169,22 @@ variable "tf_state_bucket" {
   default     = ""
 }
 
-variable "tf_lock_table" {
+# ── external-dns ──────────────────────────────────────────────────────────────
+
+variable "external_dns_domain_filter" {
   type        = string
-  description = "DynamoDB table name for Terraform state locking — ARC runner IAM policy grants access."
-  default     = "tf-locks-central"
+  description = "Root domain external-dns is allowed to manage (e.g. platform.example.com). Leave empty to manage all zones."
+  default     = ""
+}
+
+variable "external_dns_policy" {
+  type        = string
+  description = "external-dns record policy: 'sync' (create+delete) for dev/staging; 'upsert-only' (create only) for prod."
+  default     = "upsert-only"
+  validation {
+    condition     = contains(["sync", "upsert-only"], var.external_dns_policy)
+    error_message = "external_dns_policy must be 'sync' or 'upsert-only'."
+  }
 }
 
 # ── Tags ──────────────────────────────────────────────────────────────────────

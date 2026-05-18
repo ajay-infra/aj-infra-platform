@@ -1,11 +1,17 @@
-# ── L4 Helm Releases ─────────────────────────────────────────────────────────
-# Install order matters:
-#   1. Cilium        — CNI must be first; nodes stay NotReady until this runs
-#   2. cert-manager  — needed by AWS LBC for webhook TLS
-#   3. AWS LBC       — needs cert-manager CRDs
-#   4. Karpenter     — needs cluster + node role ARNs
-#   5. External Secrets
-#   6. metrics-server
+# ── L5 Helm Releases ─────────────────────────────────────────────────────────
+# Install order matters — depends_on chains enforce this:
+#   1. Cilium          — CNI must be first; nodes stay NotReady until this runs
+#   2. cert-manager    — needed by AWS LBC for webhook TLS
+#   3. AWS LBC         — needs cert-manager CRDs
+#   4. Karpenter       — needs cluster + node role ARNs
+#   5. External Secrets — needed by Falcon to read CID from Secrets Manager
+#   6. metrics-server  — needed by KEDA for HPA compatibility
+#   7. OPA Gatekeeper  — admission control (gatekeeper.tf)
+#   8. KEDA            — event-driven autoscaler (keda.tf)
+#   9. Kong KIC        — API gateway (kong.tf)
+#  10. external-dns    — Route53 automation (external-dns.tf)
+#  11. Falcon sensor   — runtime security DaemonSet (falcon.tf)
+#  12. ARC controller  — self-hosted CI runners (arc.tf, optional)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Cilium — overlay CNI (replaces vpc-cni + kube-proxy)
