@@ -46,16 +46,6 @@ resource "aws_iam_policy" "arc_runner" {
         ]
       },
       {
-        Sid    = "TerraformStateLock"
-        Effect = "Allow"
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem",
-        ]
-        Resource = "arn:aws:dynamodb:${var.aws_region}:${local.account_id}:table/${var.tf_lock_table}"
-      },
-      {
         Sid    = "ECRPull"
         Effect = "Allow"
         Action = [

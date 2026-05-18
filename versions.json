@@ -1,6 +1,6 @@
 {
   "_comment": "Single source of truth for all pinned versions. Keep in sync with variables.tf defaults.",
-  "terraform": "1.7.5",
+  "terraform": "1.10.5",
   "providers": {
     "aws":  "5.100.0",
     "helm": "2.12.1"
@@ -12,6 +12,11 @@
     "cert-manager":     "v1.16.2",
     "external-secrets": "0.11.0",
     "metrics-server":   "3.12.2",
+    "gatekeeper":       "v3.17.1",
+    "keda":             "2.16.0",
+    "kong":             "0.4.4",
+    "external-dns":     "1.15.0",
+    "falcon-sensor":    "1.25.0",
     "arc-controller":   "0.9.3",
     "arc-runner-set":   "0.9.3"
   },
