@@ -1,12 +1,12 @@
 # CLAUDE.md — aj-infra-platform
 
-> Local context file for Claude Code. Not pushed to GitHub.
+> Local context file for Claude Code, read automatically at session start.
 
 ---
 
 ## What This Repo Does
 
-Central orchestrator for the AI Search Engine infrastructure platform layer (L4 in the roadmap).
+Central orchestrator for the platform's Kubernetes add-on layer (L5 — see `aj-infra-context/CLAUDE.md`).
 
 Reads remote state from `aj-tf-module-eks` and installs all Kubernetes add-ons via Helm:
 
@@ -45,9 +45,9 @@ tfvars: `aj-infra-release/envs/workload/<mode>/<env>/common.tfvars` (passed via 
 GitHub secrets required:
 - `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`
 
-Current Helm releases installed: Cilium, AWS LBC, Karpenter, cert-manager, ESO, metrics-server, OPA Gatekeeper.
+Current Helm releases installed: Cilium, AWS LBC, Karpenter, cert-manager, ESO, metrics-server, OPA Gatekeeper, KEDA, Kong (KIC), external-dns, Falcon sensor, ARC controller — all 12, each verified to define a real `helm_release` resource (`keda.tf`, `kong.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`, `helm.tf`).
 
-Pending additions (Group 3 roadmap item): KEDA, Kong (KIC), external-dns, Falcon sensor, Cloudability agent, Alloy (k8s-monitoring), ArgoCD agent registration.
+Still genuinely pending: Cloudability agent, Alloy (k8s-monitoring), ArgoCD agent registration. (This line previously listed KEDA/Kong/external-dns/Falcon as pending too — stale; see the detailed per-add-on TODOs below, which were accurate all along.)
 
 ---
 
@@ -78,7 +78,13 @@ Stage 2: infra-platform (this repo)
 | `variables.tf` | Environment, chart versions, add-on toggles |
 | `locals.tf` | Shorthand aliases for remote state outputs |
 | `iam.tf` | IAM policies + roles + Pod Identity associations per add-on |
-| `helm.tf` | All Helm releases in install order |
+| `helm.tf` | Cilium, AWS LBC, Karpenter, cert-manager, External Secrets, metrics-server Helm releases |
+| `keda.tf` | KEDA Helm release + Pod Identity (SQS + CloudWatch scalers) |
+| `kong.tf` | Kong KIC Helm release |
+| `external-dns.tf` | external-dns Helm release + Pod Identity (Route53) |
+| `falcon.tf` | CrowdStrike Falcon sensor Helm release |
+| `arc.tf` | Actions Runner Controller Helm release + Pod Identity |
+| `gatekeeper.tf` | OPA Gatekeeper Helm release |
 | `outputs.tf` | IAM role ARNs, installed chart versions |
 | `versions.json` | Single source of truth for all pinned versions |
 | `envs/*.tfvars` | Per-environment variable overrides |
@@ -98,7 +104,9 @@ Stage 2: infra-platform (this repo)
 ## Running Locally
 
 ```bash
-# From My-Infra/
+# from aj-infra-context/local-testing/ (formerly My-Infra/ — repo renamed;
+# this Podman workflow currently has no Makefile/Dockerfile, see that repo's
+# local-testing/README.md for the known gap)
 make shell
 
 # Inside container — requires real AWS credentials for Helm to connect
