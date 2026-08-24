@@ -1,6 +1,6 @@
-environment  = "dev"
-color        = "blue"
-aws_region   = "us-east-1"
+environment = "dev"
+color       = "blue"
+aws_region  = "us-east-1"
 # state_bucket and eks_state_key are injected by provision-eks.yml via -var flags
 
 # Chart versions — keep in sync with versions.json
@@ -26,15 +26,15 @@ install_gatekeeper       = true
 install_keda             = true
 install_kong             = true
 install_external_dns     = true
-install_falcon           = false  # enable once CID is in Secrets Manager
-install_arc              = false  # enable once GitHub App is created in the org
+install_falcon           = false # enable once CID is in Secrets Manager
+install_arc              = false # enable once GitHub App is created in the org
 
 # external-dns: sync mode in dev — create AND delete records freely
-external_dns_policy       = "sync"
-external_dns_domain_filter = ""   # set to base domain once Route53 hosted zone is created
+external_dns_policy        = "sync"
+external_dns_domain_filter = "" # set to base domain once Route53 hosted zone is created
 
 # ARC
-tf_state_bucket = ""  # injected by pipeline
+tf_state_bucket = "" # injected by pipeline
 
 team        = "infra-core"
 cost_center = "infra-2026-q1"

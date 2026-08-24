@@ -1,6 +1,6 @@
-environment  = "staging"
-color        = "blue"
-aws_region   = "us-east-1"
+environment = "staging"
+color       = "blue"
+aws_region  = "us-east-1"
 # state_bucket and eks_state_key are injected by provision-eks.yml via -var flags
 
 chart_version_cilium           = "1.17.0"
