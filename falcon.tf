@@ -57,7 +57,7 @@ resource "helm_release" "falcon" {
 
   depends_on = [
     helm_release.cilium,
-    helm_release.external_secrets,   # ESO must be up to sync falcon-credentials
+    helm_release.external_secrets, # ESO must be up to sync falcon-credentials
   ]
   wait    = true
   timeout = 300

@@ -1,6 +1,6 @@
-environment  = "prod"
-color        = "blue"
-aws_region   = "us-east-1"
+environment = "prod"
+color       = "blue"
+aws_region  = "us-east-1"
 # state_bucket and eks_state_key are injected by provision-eks.yml via -var flags
 
 chart_version_cilium           = "1.17.0"
@@ -24,14 +24,14 @@ install_gatekeeper       = true
 install_keda             = true
 install_kong             = true
 install_external_dns     = true
-install_falcon           = true   # prod: Falcon always on
-install_arc              = true   # prod: self-hosted runners for pipeline jobs
+install_falcon           = true # prod: Falcon always on
+install_arc              = true # prod: self-hosted runners for pipeline jobs
 
 # Prod: upsert-only — external-dns never deletes records automatically
 external_dns_policy        = "upsert-only"
-external_dns_domain_filter = ""   # set once Route53 hosted zone is known
+external_dns_domain_filter = "" # set once Route53 hosted zone is known
 
-tf_state_bucket = ""  # injected by pipeline
+tf_state_bucket = "" # injected by pipeline
 
 team        = "infra-core"
 cost_center = "infra-2026-q1"
