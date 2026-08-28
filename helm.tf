@@ -67,7 +67,9 @@ resource "helm_release" "cert_manager" {
     value = "cert-manager"
   }
 
-  depends_on = [helm_release.cilium]
+  # The Pod Identity association must exist before the pods start, or the
+  # DNS-01 solver's first reconcile has no credentials.
+  depends_on = [helm_release.cilium, aws_eks_pod_identity_association.cert_manager]
   wait       = true
   timeout    = 300
 }
