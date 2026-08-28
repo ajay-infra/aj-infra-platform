@@ -46,7 +46,6 @@ output "installed_helm_releases" {
     var.install_keda ? { keda = var.chart_version_keda } : {},
     var.install_apisix ? { apisix = var.chart_version_apisix, apisix-ingress-controller = var.chart_version_apisix_ingress } : {},
     var.install_opa ? { opa-kube-mgmt = var.chart_version_opa } : {},
-    var.install_keycloak ? { keycloakx = var.chart_version_keycloak } : {},
     var.install_external_dns ? { external-dns = var.chart_version_external_dns } : {},
     var.install_falcon ? { falcon-sensor = var.chart_version_falcon } : {},
     var.install_arc ? { arc = var.chart_version_arc_controller } : {},

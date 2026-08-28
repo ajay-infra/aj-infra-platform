@@ -20,7 +20,6 @@ L5 in the platform's infrastructure layer stack — see `aj-infra-context/CLAUDE
 | **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` |
 | **APISIX** | apache/apisix | none (no AWS calls) | `install_apisix` |
 | **OPA** | open-policy-agent/kube-mgmt | none | `install_opa` |
-| **Keycloak** | codecentric/keycloakx | none | `install_keycloak` (default **false**) |
 | **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` |
 | **ACK ACM + Route53** | aws-controllers-k8s | Pod Identity (ACM, Route53) | `install_ack_certificates` |
 | **Falcon sensor** | crowdstrike/falcon-sensor | — | `install_falcon` |
@@ -83,7 +82,6 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 | `keda.tf` | KEDA — Pod Identity for SQS + CloudWatch scalers |
 | `apisix.tf` | APISIX gateway + ingress controller — north–south API gateway |
 | `opa.tf` | Standalone OPA — authorization decision point APISIX calls |
-| `keycloak.tf` | Keycloak (keycloakx) — identity provider. **Off by default**: needs a database |
 | `external-dns.tf` | external-dns — Pod Identity for Route53 |
 | `ack.tf` | ACK ACM + Route53 controllers — certificates as K8s resources. Off by default |
 | `cert-manager-iam.tf` | cert-manager — Pod Identity for Route53 DNS-01 (ACME challenge TXT only) |
