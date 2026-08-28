@@ -25,11 +25,31 @@
 # aj-infra-context/arch/gateway-selection.md §5.
 #
 # ── Why this is off by default ───────────────────────────────────────────────
-# Keycloak needs a database, and this estate has none: aj-tf-module-aurora has
-# no consumer and no pipeline stage applies it (aj-infra-context#15), with the
-# engine choice deliberately deferred (#17). Running it on the chart's
+# Keycloak needs a database and this estate has none. Running it on the chart's
 # dev-mode H2 would produce an identity provider that loses every user on
 # restart, which is worse than not running it.
+#
+# The engine is DECIDED: Aurora PostgreSQL. This is platform infrastructure, so
+# it does NOT wait on aj-infra-context#17, which defers the *application*
+# data-tiering choice. What it does wait on (aj-infra-context#24):
+#
+#   * a pipeline stage that applies aj-tf-module-aurora — none exists (#15),
+#     and this is its first real consumer
+#   * a DEDICATED cluster, not the application one. If the app database is down
+#     and Keycloak shares it, you cannot authenticate in order to fix anything.
+#     An IdP must not inherit the availability of what it protects.
+#   * RIGHT-SIZED: db.t4g.medium + 1 replica is about $117/mo. Copying the
+#     application shape (db.r8g.xlarge + 2) would be roughly $1,280/mo for
+#     realms, users and sessions. The dedicated-vs-shared argument is worth
+#     ~$117/mo; it is not worth $1,280.
+#
+# UNRESOLVED, AND BLOCKING: aj-tf-module-aurora sets enable_iam_auth = true per
+# a 2026-03-31 standing decision — pods use 15-minute rotating rds-db:connect
+# tokens, never static passwords. KEYCLOAK CANNOT DO THIS out of the box: its
+# JDBC connection is configured at startup with no token-refresh mechanism.
+# Either the AWS Advanced JDBC Driver goes into the image (a build), or a static
+# password comes from Secrets Manager via External Secrets (an explicit,
+# recorded exception to that decision). Decide before enabling — see #24.
 #
 # ⚠ INCOMPLETE BY DESIGN. Database connection, hostname, TLS and admin
 # bootstrap are NOT configured below. The keycloakx chart takes these through
