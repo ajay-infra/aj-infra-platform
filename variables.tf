@@ -121,6 +121,22 @@ variable "install_apisix" {
   default     = true
 }
 
+variable "install_keycloak" {
+  type        = bool
+  description = <<-EOT
+    Install Keycloak as the identity provider.
+
+    OFF by default: Keycloak needs a database, and none exists yet
+    (aj-infra-context#15 / #17). The chart is configured for production mode, so
+    it will refuse to start without one rather than silently running on H2 and
+    losing every user on restart.
+
+    Enable once a database exists AND the connection/hostname/admin-bootstrap
+    values in keycloak.tf have been completed against the pinned chart.
+  EOT
+  default     = false
+}
+
 variable "install_opa" {
   type        = bool
   description = <<-EOT
@@ -198,6 +214,11 @@ variable "chart_version_falcon" {
 variable "chart_version_apisix_ingress" {
   type    = string
   default = "1.3.0"
+}
+
+variable "chart_version_keycloak" {
+  type    = string
+  default = "7.3.0"
 }
 
 variable "chart_version_opa" {

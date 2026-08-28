@@ -4,6 +4,13 @@ All notable changes to this module are documented here. Format loosely follows [
 
 ## [Unreleased]
 
+### Added
+- **Keycloak (`keycloak.tf`, `keycloakx` 7.3.0 / app 26.7.2), off by default.** The identity provider that issues the tokens OPA verifies. Chosen over Zitadel and Cognito because it is already proven in operation here, and because **Organizations** (GA in Keycloak 26) solves the exact failure that shaped the API layer.
+  - **Why Organizations is the point:** a prior estate ran realm-per-tenant and reached ~24 issuers in one namespace, OOM-killing an Envoy-based gateway against a 16-provider ceiling. Organizations puts tenants *inside a single realm*, each with its own members and its own federated IdP — so a customer bringing their own IdP is brokered and the token reaching the gateway is still Keycloak-issued. One issuer, tenant as a claim, issuer count flat as tenants grow.
+  - **⚠ Prototype before committing.** "3 realms per tenant" on the previous estate implies those realms encoded something — environments, brands. Whether that distinction survives a mapping onto organizations is a modelling question and the open risk. See `aj-infra-context/arch/gateway-selection.md` §5.
+  - **Off by default because there is no database.** `aj-tf-module-aurora` has no consumer (`aj-infra-context#15`) and the engine choice is deferred (`#17`). The release is configured for production mode (`start --optimized`), so it refuses to run without a real database rather than silently starting on H2 and losing every user on restart.
+  - **Deliberately incomplete.** Database connection, hostname, TLS and admin bootstrap are *not* configured — the keycloakx chart takes these through `command`, `extraEnv` and `database.*`, and keys differ across chart majors. Left out rather than guessed: a plausible-but-wrong Helm value passes `terraform validate` and fails at apply. Admin credentials must arrive via External Secrets, never Terraform variables, or they land in state.
+
 ### Changed — BREAKING
 - **Kong replaced by Apache APISIX + standalone OPA** (`apisix.tf`, `opa.tf`; `kong.tf` removed). Full rationale in `aj-infra-context/arch/gateway-selection.md`; the decision is LOCKED there.
   - **Kong OSS could not do what this repo's own config claimed.** `kong.tf` advertised "JWT/OIDC auth" — `openid-connect`, the OPA plugin, the developer portal and Kong Manager are all Enterprise-gated. The configured OSS `jwt` plugin resolves `kid` against `KongConsumer` objects, of which there were zero, so it could not carry per-user identity at all.
