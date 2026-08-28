@@ -4,6 +4,14 @@ All notable changes to this module are documented here. Format loosely follows [
 
 ## [Unreleased]
 
+### Fixed
+- **cert-manager had no IAM role and no Pod Identity association, so its DNS-01 solver had no AWS credentials.** `k8s-manifests/cert-manager/clusterissuer-prod.yaml` states it uses EKS Pod Identity and notes "cert-manager Pod Identity role must have Route53 write access" — eight associations existed here and cert-manager was not one of them; its Helm release set only `installCRDs` and leader election.
+  - Consequence, end to end: no `_acme-challenge` TXT records → Let's Encrypt never validates → Secret `kong-wildcard-tls` never created → Kong has no certificate → CloudFront's `origin_protocol_policy = "https-only"` connection to the origin fails → **nothing serves TLS**. DNS-01 is not optional here: Let's Encrypt will not issue a wildcard over HTTP-01, and `certificate-kong-wildcard.yaml` requests one.
+  - **cert-manager is the one Route53 writer that legitimately needs `DELETE`** — it creates a challenge record, validates, and cleans up. So the bound cannot come from the action list. It comes from record **type and name** instead: `TXT` only, names matching `_acme-challenge*`. Even holding DELETE it cannot touch a CNAME, which covers Terraform's `blue.`/`green.`/`active.`/apex records, every external-dns workload record, and every ACM validation CNAME from the ACK Route53 controller.
+  - `Resource` narrows to `route53_hosted_zone_id` when set and is `hostedzone/*` until then. Wider than ideal, but far less permissive than it looks — the type and name conditions still restrict it to ACME challenge records in any zone. It is written this way because `install_cert_manager` defaults true and is set in all three env tfvars, none of which has a zone id yet; requiring one would break every existing environment at plan time.
+  - `helm_release.cert_manager` now `depends_on` the association, so the first reconcile cannot run without credentials.
+  - Closes the §7 gap 1 recorded in `aj-infra-context/arch/tls-and-edge.md`.
+
 ### Added
 - **ACK ACM + Route53 controllers (`ack.tf`), off by default** behind `install_ack_certificates`. Certificates become Kubernetes resources rather than Terraform ones, which breaks the dependency cycle where the ACM cert was trapped inside the CloudFront stage — CloudFront needs the ALB's DNS, and an ALB with HTTPS needs a cert that only existed after CloudFront ran.
   - **Both controllers, one toggle, by necessity.** The ACM controller does **not** write DNS validation records; it requests the certificate and then waits for validation it cannot perform. AWS's documentation points at the separate Route53 controller for the CNAMEs, so installing acm alone leaves every public certificate in `PENDING_VALIDATION` indefinitely. An earlier note in `aj-platform-gitops/CLAUDE.md` credited the ACM controller with writing its own validation records — that was wrong and is corrected there.

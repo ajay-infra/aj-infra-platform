@@ -82,6 +82,7 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 | `kong.tf` | Kong KIC |
 | `external-dns.tf` | external-dns — Pod Identity for Route53 |
 | `ack.tf` | ACK ACM + Route53 controllers — certificates as K8s resources. Off by default |
+| `cert-manager-iam.tf` | cert-manager — Pod Identity for Route53 DNS-01 (ACME challenge TXT only) |
 | `falcon.tf` | CrowdStrike Falcon sensor |
 | `arc.tf` | Actions Runner Controller — Pod Identity |
 | `gatekeeper.tf` | OPA Gatekeeper |
