@@ -22,6 +22,7 @@ Reads remote state from `aj-tf-module-eks` and installs all Kubernetes add-ons v
 | **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` |
 | **Kong KIC** | kong/ingress | — | `install_kong` |
 | **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` |
+| **ACK ACM + Route53** | aws-controllers-k8s | Pod Identity (ACM, Route53) | `install_ack_certificates` |
 | **Falcon sensor** | crowdstrike/falcon-sensor | — | `install_falcon` |
 | **ARC controller** | actions/gha-runner-scale-set-controller | Pod Identity | `install_arc` |
 
@@ -46,6 +47,11 @@ GitHub secrets required:
 - `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`
 
 Current Helm releases installed: Cilium, AWS LBC, Karpenter, cert-manager, ESO, metrics-server, OPA Gatekeeper, KEDA, Kong (KIC), external-dns, Falcon sensor, ARC controller — all 12, each verified to define a real `helm_release` resource (`keda.tf`, `kong.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`, `helm.tf`).
+
+Added 2026-08-28 and **off by default**: the ACK ACM + Route53 controllers
+(`ack.tf`, `install_ack_certificates`). They are 13 and 14, but the toggle
+defaults to `false` because enabling them adds a fifth writer to the shared
+Route53 zone — a decision, not a default. See the ACK section below.
 
 Still genuinely pending: Cloudability agent, Alloy (k8s-monitoring), ArgoCD agent registration. (This line previously listed KEDA/Kong/external-dns/Falcon as pending too — stale; see the detailed per-add-on TODOs below, which were accurate all along.)
 
@@ -82,6 +88,7 @@ Stage 2: infra-platform (this repo)
 | `keda.tf` | KEDA Helm release + Pod Identity (SQS + CloudWatch scalers) |
 | `kong.tf` | Kong KIC Helm release |
 | `external-dns.tf` | external-dns Helm release + Pod Identity (Route53) |
+| `ack.tf` | ACK ACM + Route53 controllers — certificates as K8s resources. Off by default |
 | `falcon.tf` | CrowdStrike Falcon sensor Helm release |
 | `arc.tf` | Actions Runner Controller Helm release + Pod Identity |
 | `gatekeeper.tf` | OPA Gatekeeper Helm release |
@@ -130,3 +137,47 @@ terraform apply -var-file=envs/dev.tfvars
 - [ ] Falcon `install_falcon = true` in dev/staging once CID is stored in Secrets Manager
 - [ ] external-dns `domain_filter` — set to actual hosted zone once Route53 zone is created
 - [ ] Kong: add Valkey connection details for rate-limiting-advanced plugin via ESO secret
+
+---
+
+## ACK certificate controllers (`ack.tf`)
+
+Two controllers, one toggle, and the reason is not stylistic: **the ACM
+controller does not write DNS validation records.** It requests the certificate
+and waits for validation it cannot perform; AWS's documentation points at the
+separate Route53 controller for the CNAMEs. Deploying acm alone leaves every
+public certificate in `PENDING_VALIDATION` indefinitely. So `install_ack_certificates`
+governs both, and `route53_hosted_zone_id` is required when it is on — enforced
+by a plan-time precondition, since Terraform variable validation cannot see
+another variable.
+
+### `spec.exportTo` is forbidden, and IAM cannot enforce that
+
+`exportTo` makes a certificate an **exportable** public certificate: **$7 per
+FQDN and $79 per wildcard, charged at issuance AND at every renewal** on a
+198-day validity — roughly **$158/year** for a single wildcard. Standard ACM
+certificates are free.
+
+There is no IAM condition key for the export option. ACM supports only
+`ValidationMethod`, `DomainNames`, `KeyAlgorithm`, `CertificateTransparencyLogging`
+(deprecated), `CertificateAuthority` and `CertificateKeyPairOrigin` on
+`RequestCertificate` — none sees it. And the charge lands at **issuance**, not
+at export, so withholding `acm:ExportCertificate` stops the private key leaving
+but does **not** stop the bill.
+
+The enforcement point is therefore admission control:
+`k8s-manifests/policies/constraints/deny-acm-exportable.yaml`, cluster-wide and
+unconditional, with `gator` tests in both directions. The one case `exportTo`
+serves — in-cluster TLS termination — is already covered free by cert-manager.
+
+`acm:ExportCertificate` is still withheld from the controller's role as defence
+in depth. That is not the cost control, and the comment in `ack.tf` says so.
+
+### The fifth Route53 writer is bounded by IAM, not by configuration
+
+Session 7's external-dns incident was a DNS writer holding deletion rights over
+records it did not create. The ACK Route53 controller's policy is scoped three
+ways at once — CNAME records only, names beginning `_`, and `CREATE`/`UPSERT`
+with no `DELETE` — plus a single hosted zone. It cannot remove a record even if
+compromised. Full ownership table in `aj-platform-gitops/CLAUDE.md`.
+

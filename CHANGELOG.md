@@ -4,6 +4,21 @@ All notable changes to this module are documented here. Format loosely follows [
 
 ## [Unreleased]
 
+### Added
+- **ACK ACM + Route53 controllers (`ack.tf`), off by default** behind `install_ack_certificates`. Certificates become Kubernetes resources rather than Terraform ones, which breaks the dependency cycle where the ACM cert was trapped inside the CloudFront stage — CloudFront needs the ALB's DNS, and an ALB with HTTPS needs a cert that only existed after CloudFront ran.
+  - **Both controllers, one toggle, by necessity.** The ACM controller does **not** write DNS validation records; it requests the certificate and then waits for validation it cannot perform. AWS's documentation points at the separate Route53 controller for the CNAMEs, so installing acm alone leaves every public certificate in `PENDING_VALIDATION` indefinitely. An earlier note in `aj-platform-gitops/CLAUDE.md` credited the ACM controller with writing its own validation records — that was wrong and is corrected there.
+  - **Off by default** because enabling it adds a **fifth writer** to the shared Route53 zone. That is a decision, not a default.
+  - `route53_hosted_zone_id` is required when enabled, enforced by a plan-time `precondition` — Terraform variable validation cannot reference another variable.
+- **The fifth Route53 writer is bounded by IAM rather than by chart configuration.** Session 7's external-dns incident was a DNS writer holding deletion rights over records it did not create, one edited value away from removing production records. The ACK Route53 policy is scoped three ways simultaneously — `ChangeResourceRecordSetsRecordTypes` = CNAME only, `ChangeResourceRecordSetsNormalizedRecordNames` = names beginning `_`, `ChangeResourceRecordSetsActions` = CREATE/UPSERT with **no DELETE** — plus a single hosted zone in `Resource`. It cannot remove a record even if compromised. (Noted in-file: `ForAllValues` evaluates true when the key is absent, so this shape must not be copied onto an action that does not populate these keys.)
+- `acm:RequestCertificate` is conditioned on `acm:ValidationMethod = DNS`, so a certificate can never fall back to EMAIL validation and wait on a human clicking a link.
+
+### Note — `spec.exportTo` is forbidden, and IAM cannot enforce it
+`exportTo` requests an **exportable** public certificate: **$7 per FQDN and $79 per wildcard, charged at issuance AND at every renewal** on a 198-day validity — roughly **$158/year** per wildcard. Standard ACM certificates are free.
+
+There is no IAM condition key for the export option — `RequestCertificate` supports only `ValidationMethod`, `DomainNames`, `KeyAlgorithm`, `CertificateTransparencyLogging` (deprecated), `CertificateAuthority` and `CertificateKeyPairOrigin`. And the charge lands at **issuance**, not at export, so withholding `acm:ExportCertificate` prevents the private key leaving but does **not** prevent the spend.
+
+Enforcement is therefore admission control: `deny-acm-exportable` in `k8s-manifests`, cluster-wide and unconditional, with `gator` tests in both directions. `acm:ExportCertificate` is still withheld from the role as defence in depth, which `ack.tf` is explicit is *not* the cost control.
+
 ### Fixed
 - `terraform fmt` failures in `envs/dev.tfvars`, `envs/prod-blue.tfvars`, `envs/staging.tfvars`, `external-dns.tf`, `falcon.tf`, `outputs.tf` — pre-existing (predates this PR entirely; none of these files were touched by anything else in this changeset), and CI's `Format` job was failing on `main` as a result. This PR is apparently the first to actually trigger `pull_request` CI in a while, surfacing it. Whitespace/alignment only, no semantic changes — ran `terraform fmt -recursive`.
 - `CLAUDE.md`'s "Pending additions" summary claimed KEDA, Kong, external-dns, and Falcon sensor were still pending. All four are fully implemented — verified each defines a real `helm_release` resource (`keda.tf`, `kong.tf`, `external-dns.tf`, `falcon.tf`), and `versions.json` pins all their chart versions. ARC controller (`arc.tf`) is also fully implemented but wasn't even mentioned in the pending list. This also means the central `aj-infra-context/CLAUDE.md` roadmap's priority-#1 item ("Update aj-infra-platform... blocks full workload cluster operation") is largely already done — flagged separately for a fix there too.

@@ -20,6 +20,7 @@ L5 in the platform's infrastructure layer stack — see `aj-infra-context/CLAUDE
 | **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` |
 | **Kong KIC** | kong/ingress | — | `install_kong` |
 | **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` |
+| **ACK ACM + Route53** | aws-controllers-k8s | Pod Identity (ACM, Route53) | `install_ack_certificates` |
 | **Falcon sensor** | crowdstrike/falcon-sensor | — | `install_falcon` |
 | **ARC controller** | actions/gha-runner-scale-set-controller | Pod Identity | `install_arc` |
 
@@ -80,6 +81,7 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 | `keda.tf` | KEDA — Pod Identity for SQS + CloudWatch scalers |
 | `kong.tf` | Kong KIC |
 | `external-dns.tf` | external-dns — Pod Identity for Route53 |
+| `ack.tf` | ACK ACM + Route53 controllers — certificates as K8s resources. Off by default |
 | `falcon.tf` | CrowdStrike Falcon sensor |
 | `arc.tf` | Actions Runner Controller — Pod Identity |
 | `gatekeeper.tf` | OPA Gatekeeper |

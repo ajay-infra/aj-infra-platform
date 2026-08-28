@@ -123,6 +123,22 @@ variable "install_external_dns" {
   default     = true
 }
 
+variable "install_ack_certificates" {
+  type        = bool
+  description = <<-EOT
+    Install the ACK ACM + Route53 controllers, which manage ACM certificates as
+    Kubernetes resources.
+
+    Both or neither: the ACM controller does not write DNS validation records,
+    so on its own it leaves every public certificate in PENDING_VALIDATION
+    indefinitely. See ack.tf.
+
+    Off by default. Enabling it adds a fifth writer to the shared Route53 zone,
+    which is a decision rather than a default.
+  EOT
+  default     = false
+}
+
 variable "install_falcon" {
   type        = bool
   description = "Install CrowdStrike Falcon sensor DaemonSet. Requires ESO secret 'falcon-credentials' in falcon-system namespace."
@@ -161,6 +177,16 @@ variable "chart_version_falcon" {
   default = "1.25.0"
 }
 
+variable "chart_version_ack_acm" {
+  type    = string
+  default = "1.8.1"
+}
+
+variable "chart_version_ack_route53" {
+  type    = string
+  default = "1.5.2"
+}
+
 # ── ARC ───────────────────────────────────────────────────────────────────────
 
 variable "tf_state_bucket" {
@@ -184,6 +210,27 @@ variable "external_dns_policy" {
   validation {
     condition     = contains(["sync", "upsert-only"], var.external_dns_policy)
     error_message = "external_dns_policy must be 'sync' or 'upsert-only'."
+  }
+}
+
+# ── ACK certificate controllers ───────────────────────────────────────────────
+
+variable "route53_hosted_zone_id" {
+  type        = string
+  description = <<-EOT
+    Hosted zone the ACK Route53 controller may write ACM validation records
+    into. Required when install_ack_certificates is true.
+
+    The controller's IAM policy is scoped to this zone AND to CNAME records
+    whose names begin with an underscore AND to CREATE/UPSERT only — it cannot
+    delete anything, and cannot touch the Terraform-owned traffic records or
+    external-dns's workload records. See ack.tf.
+  EOT
+  default     = ""
+
+  validation {
+    condition     = var.route53_hosted_zone_id == "" || can(regex("^Z[A-Z0-9]+$", var.route53_hosted_zone_id))
+    error_message = "route53_hosted_zone_id must be a Route53 zone ID (Z...) or empty."
   }
 }
 
