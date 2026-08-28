@@ -4,6 +4,20 @@ All notable changes to this module are documented here. Format loosely follows [
 
 ## [Unreleased]
 
+### Changed — BREAKING
+- **Kong replaced by Apache APISIX + standalone OPA** (`apisix.tf`, `opa.tf`; `kong.tf` removed). Full rationale in `aj-infra-context/arch/gateway-selection.md`; the decision is LOCKED there.
+  - **Kong OSS could not do what this repo's own config claimed.** `kong.tf` advertised "JWT/OIDC auth" — `openid-connect`, the OPA plugin, the developer portal and Kong Manager are all Enterprise-gated. The configured OSS `jwt` plugin resolves `kid` against `KongConsumer` objects, of which there were zero, so it could not carry per-user identity at all.
+  - **Envoy Gateway was evaluated and rejected on operational evidence rather than features.** A prior estate OOM-killed it with ~24 JWT issuers in one namespace against a 16-provider ceiling. APISIX has no xDS config plane, so that class of failure cannot recur.
+  - `opa` and `openid-connect` ship in the APISIX OSS build, so no licence gates the authorization design. `ApisixConsumer` provides API keys and per-consumer quotas as CRDs, replacing key management that had been hand-rolled in Python on the previous estate.
+  - The APISIX Ingress Controller supports **Gateway API** alongside its own CRDs, so config stays as GitOps-native as any Envoy-based option.
+- **`install_kong` / `chart_version_kong` → `install_apisix`, `install_opa`, `chart_version_apisix`, `chart_version_apisix_ingress`, `chart_version_opa`.** All three env tfvars updated; `outputs.tf` chart-version map updated.
+
+### Added — the invariant this design rests on
+- **A tenant never appears in gateway configuration.** Tenants are JWT claims and OPA policy data. Per-tenant state in the proxy config plane scales O(tenants × proxies) and is precisely what caused the OOM above. Documented at the top of `apisix.tf` and in `CLAUDE.md`.
+- **JWT verification happens in OPA, not at the gateway.** `io.jwt.decode_verify` with `allowed_issuers` makes issuers *data* rather than configuration — adding a tenant becomes a policy-data refresh, not a proxy rollout, and no provider ceiling exists to hit. The APISIX `opa` plugin forwards request headers, so OPA receives the `Authorization` header and performs verification and authorization in a single decision. Consequence: API keys and JWTs are different *authentication* mechanisms feeding the *same* policy — one authorization surface, not two.
+- **This OPA is not Gatekeeper.** Gatekeeper is OPA embedded in an admission controller and does not expose the Data API (`/v1/data/...`) the APISIX plugin queries. Same language, different deployment, different job. `admissionController.enabled=false` is set explicitly so the two never contend for the same webhooks.
+- OPA runs 3 replicas in prod: an authorization decision sits in the request path of every API call, so a single-replica deployment would be a single point of failure for the entire API surface.
+
 ### Fixed
 - **cert-manager had no IAM role and no Pod Identity association, so its DNS-01 solver had no AWS credentials.** `k8s-manifests/cert-manager/clusterissuer-prod.yaml` states it uses EKS Pod Identity and notes "cert-manager Pod Identity role must have Route53 write access" — eight associations existed here and cert-manager was not one of them; its Helm release set only `installCRDs` and leader election.
   - Consequence, end to end: no `_acme-challenge` TXT records → Let's Encrypt never validates → Secret `kong-wildcard-tls` never created → Kong has no certificate → CloudFront's `origin_protocol_policy = "https-only"` connection to the origin fails → **nothing serves TLS**. DNS-01 is not optional here: Let's Encrypt will not issue a wildcard over HTTP-01, and `certificate-kong-wildcard.yaml` requests one.

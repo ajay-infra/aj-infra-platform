@@ -8,7 +8,8 @@
 #   6. metrics-server  — needed by KEDA for HPA compatibility
 #   7. OPA Gatekeeper  — admission control (gatekeeper.tf)
 #   8. KEDA            — event-driven autoscaler (keda.tf)
-#   9. Kong KIC        — API gateway (kong.tf)
+#   9. APISIX          — API gateway + ingress controller (apisix.tf)
+#  10. OPA             — authorization decision point for APISIX (opa.tf)
 #  10. external-dns    — Route53 automation (external-dns.tf)
 #  11. Falcon sensor   — runtime security DaemonSet (falcon.tf)
 #  12. ARC controller  — self-hosted CI runners (arc.tf, optional)
