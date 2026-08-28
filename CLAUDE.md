@@ -20,7 +20,8 @@ Reads remote state from `aj-tf-module-eks` and installs all Kubernetes add-ons v
 | **metrics-server** | kubernetes-sigs/metrics-server | — | `install_metrics_server` |
 | **OPA Gatekeeper** | open-policy-agent/gatekeeper | — | `install_gatekeeper` |
 | **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` |
-| **Kong KIC** | kong/ingress | — | `install_kong` |
+| **APISIX** | apache/apisix | none (no AWS calls) | `install_apisix` |
+| **OPA** | open-policy-agent/kube-mgmt | none | `install_opa` |
 | **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` |
 | **ACK ACM + Route53** | aws-controllers-k8s | Pod Identity (ACM, Route53) | `install_ack_certificates` |
 | **Falcon sensor** | crowdstrike/falcon-sensor | — | `install_falcon` |
@@ -46,7 +47,7 @@ tfvars: `aj-infra-release/envs/workload/<mode>/<env>/common.tfvars` (passed via 
 GitHub secrets required:
 - `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`
 
-Current Helm releases installed: Cilium, AWS LBC, Karpenter, cert-manager, ESO, metrics-server, OPA Gatekeeper, KEDA, Kong (KIC), external-dns, Falcon sensor, ARC controller — all 12, each verified to define a real `helm_release` resource (`keda.tf`, `kong.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`, `helm.tf`).
+Current Helm releases installed: Cilium, AWS LBC, Karpenter, cert-manager, ESO, metrics-server, OPA Gatekeeper, KEDA, APISIX, external-dns, Falcon sensor, ARC controller — all 12, each verified to define a real `helm_release` resource (`keda.tf`, `apisix.tf`, `opa.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`, `helm.tf`).
 
 Added 2026-08-28 and **off by default**: the ACK ACM + Route53 controllers
 (`ack.tf`, `install_ack_certificates`). They are 13 and 14, but the toggle
@@ -86,7 +87,8 @@ Stage 2: infra-platform (this repo)
 | `iam.tf` | IAM policies + roles + Pod Identity associations per add-on |
 | `helm.tf` | Cilium, AWS LBC, Karpenter, cert-manager, External Secrets, metrics-server Helm releases |
 | `keda.tf` | KEDA Helm release + Pod Identity (SQS + CloudWatch scalers) |
-| `kong.tf` | Kong KIC Helm release |
+| `apisix.tf` | APISIX gateway + ingress controller — north–south API gateway |
+| `opa.tf` | Standalone OPA — authorization decision point APISIX calls |
 | `external-dns.tf` | external-dns Helm release + Pod Identity (Route53) |
 | `ack.tf` | ACK ACM + Route53 controllers — certificates as K8s resources. Off by default |
 | `cert-manager-iam.tf` | cert-manager — Pod Identity for Route53 DNS-01 (ACME challenge TXT only) |
@@ -182,3 +184,46 @@ ways at once — CNAME records only, names beginning `_`, and `CREATE`/`UPSERT`
 with no `DELETE` — plus a single hosted zone. It cannot remove a record even if
 compromised. Full ownership table in `aj-platform-gitops/CLAUDE.md`.
 
+---
+
+## APISIX + OPA replaced Kong (2026-08-28)
+
+Full rationale in `aj-infra-context/arch/gateway-selection.md`. What matters when
+touching these files:
+
+**Kong OSS could not do what this repo's config claimed.** `kong.tf` advertised
+"JWT/OIDC auth"; `openid-connect`, the OPA plugin, the developer portal and Kong
+Manager are all Enterprise-gated. The configured OSS `jwt` plugin resolved `kid`
+against `KongConsumer` objects, of which there were zero.
+
+**Envoy Gateway was evaluated and rejected on operational evidence**, not on
+features: a prior estate OOM-killed it with ~24 JWT issuers in one namespace
+against a 16-provider ceiling. APISIX has no xDS config plane, so that class of
+failure cannot recur.
+
+### The rule that must never be broken
+
+> **A tenant never appears in gateway configuration.**
+
+Tenants are JWT claims and OPA policy data. Per-tenant state in the proxy config
+plane scales O(tenants × proxies) and is exactly what caused that OOM. If a
+change would add a per-tenant entry to `apisix.tf` or to a `SecurityPolicy`-like
+object, it is the wrong change.
+
+### Why OPA verifies JWTs rather than the gateway
+
+Verification in OPA (`io.jwt.decode_verify` + `allowed_issuers`) makes **issuers
+data instead of configuration**. Adding a tenant is a policy-data refresh, not a
+proxy rollout, and no provider ceiling exists to hit. The APISIX `opa` plugin
+forwards request headers, so OPA sees the `Authorization` header and does
+verification and authorization in one decision.
+
+Consequence worth keeping: API keys and JWTs are different *authentication*
+mechanisms that both feed the *same* policy. One authorization surface.
+
+### This OPA is not Gatekeeper
+
+Gatekeeper is OPA embedded in an admission controller and does not expose the
+Data API (`/v1/data/...`) the APISIX plugin queries. Same language, different
+deployment, different job — admission control on Kubernetes objects vs
+authorization on API requests. Do not try to point one at the other.

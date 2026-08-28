@@ -111,9 +111,27 @@ variable "install_keda" {
   default     = true
 }
 
-variable "install_kong" {
+variable "install_apisix" {
   type        = bool
-  description = "Install Kong Ingress Controller. KongPlugin CRDs live in k8s-manifests."
+  description = <<-EOT
+    Install Apache APISIX (gateway + ingress controller) as the north–south API
+    gateway. Replaced Kong on 2026-08-28 — see
+    aj-infra-context/arch/gateway-selection.md.
+  EOT
+  default     = true
+}
+
+variable "install_opa" {
+  type        = bool
+  description = <<-EOT
+    Install standalone OPA as the authorization decision point APISIX calls.
+
+    Distinct from Gatekeeper, which is OPA embedded in an admission controller
+    and does not expose the Data API this needs. Same language, different job.
+
+    Enabling APISIX without this leaves the gateway with no authorization
+    backend — routes would authenticate but never authorize.
+  EOT
   default     = true
 }
 
@@ -162,9 +180,9 @@ variable "chart_version_keda" {
   default = "2.16.0"
 }
 
-variable "chart_version_kong" {
+variable "chart_version_apisix" {
   type    = string
-  default = "0.4.4"
+  default = "2.17.0"
 }
 
 variable "chart_version_external_dns" {
@@ -175,6 +193,16 @@ variable "chart_version_external_dns" {
 variable "chart_version_falcon" {
   type    = string
   default = "1.25.0"
+}
+
+variable "chart_version_apisix_ingress" {
+  type    = string
+  default = "1.3.0"
+}
+
+variable "chart_version_opa" {
+  type    = string
+  default = "11.0.12"
 }
 
 variable "chart_version_ack_acm" {

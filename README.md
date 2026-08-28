@@ -18,13 +18,14 @@ L5 in the platform's infrastructure layer stack — see `aj-infra-context/CLAUDE
 | **metrics-server** | kubernetes-sigs/metrics-server | — | `install_metrics_server` |
 | **OPA Gatekeeper** | open-policy-agent/gatekeeper | — | `install_gatekeeper` |
 | **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` |
-| **Kong KIC** | kong/ingress | — | `install_kong` |
+| **APISIX** | apache/apisix | none (no AWS calls) | `install_apisix` |
+| **OPA** | open-policy-agent/kube-mgmt | none | `install_opa` |
 | **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` |
 | **ACK ACM + Route53** | aws-controllers-k8s | Pod Identity (ACM, Route53) | `install_ack_certificates` |
 | **Falcon sensor** | crowdstrike/falcon-sensor | — | `install_falcon` |
 | **ARC controller** | actions/gha-runner-scale-set-controller | Pod Identity | `install_arc` |
 
-All 12 install via real `helm_release` resources — see `helm.tf` (Cilium/AWS LBC/Karpenter/cert-manager/External Secrets/metrics-server) and the per-add-on files (`keda.tf`, `kong.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`).
+All 12 install via real `helm_release` resources — see `helm.tf` (Cilium/AWS LBC/Karpenter/cert-manager/External Secrets/metrics-server) and the per-add-on files (`keda.tf`, `apisix.tf`, `opa.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`).
 
 `versions.json` is the single source of truth for chart versions — keep it in sync with `variables.tf` defaults and `envs/*.tfvars`.
 
@@ -79,7 +80,8 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 | `iam.tf` | IAM policies + roles + Pod Identity associations per add-on |
 | `helm.tf` | Cilium, AWS LBC, Karpenter, cert-manager, External Secrets, metrics-server |
 | `keda.tf` | KEDA — Pod Identity for SQS + CloudWatch scalers |
-| `kong.tf` | Kong KIC |
+| `apisix.tf` | APISIX gateway + ingress controller — north–south API gateway |
+| `opa.tf` | Standalone OPA — authorization decision point APISIX calls |
 | `external-dns.tf` | external-dns — Pod Identity for Route53 |
 | `ack.tf` | ACK ACM + Route53 controllers — certificates as K8s resources. Off by default |
 | `cert-manager-iam.tf` | cert-manager — Pod Identity for Route53 DNS-01 (ACME challenge TXT only) |

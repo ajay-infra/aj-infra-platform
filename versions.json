@@ -14,13 +14,15 @@
     "metrics-server": "3.12.2",
     "gatekeeper": "v3.17.1",
     "keda": "2.16.0",
-    "kong": "0.4.4",
     "external-dns": "1.15.0",
     "falcon-sensor": "1.25.0",
     "arc-controller": "0.9.3",
     "arc-runner-set": "0.9.3",
     "ack-acm": "1.8.1",
-    "ack-route53": "1.5.2"
+    "ack-route53": "1.5.2",
+    "apisix": "2.17.0",
+    "apisix-ingress-controller": "1.3.0",
+    "opa-kube-mgmt": "11.0.12"
   },
   "kubernetes": "1.35"
 }
