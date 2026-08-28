@@ -22,8 +22,7 @@
     "ack-route53": "1.5.2",
     "apisix": "2.17.0",
     "apisix-ingress-controller": "1.3.0",
-    "opa-kube-mgmt": "11.0.12",
-    "keycloakx": "7.3.0"
+    "opa-kube-mgmt": "11.0.12"
   },
   "kubernetes": "1.35"
 }
