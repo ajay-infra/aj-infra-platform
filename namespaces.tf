@@ -32,7 +32,7 @@ resource "kubernetes_namespace" "platform" {
   metadata {
     name = each.key
 
-    labels = {
+    labels = merge({
       # Cost attribution. AWS tags attach to nodes and many pods share a node,
       # so container spend is allocated from these, not from the tags above.
       "team"                 = var.team
@@ -46,6 +46,17 @@ resource "kubernetes_namespace" "platform" {
       # ArgoCD and Prometheus already read.
       "app.kubernetes.io/name"       = each.value.application
       "app.kubernetes.io/managed-by" = "terraform"
-    }
+
+      # Pod Security. `audit` and `warn` only — `enforce` is deliberately unset
+      # except where a component states its own level, because a wrong enforce
+      # level BLOCKS the component and the charts cannot be fetched offline to
+      # confirm what each one needs. Audit and warn surface the same information
+      # in the log without that risk, and enforce can be raised per component
+      # once its real requirements are observed.
+      "pod-security.kubernetes.io/audit" = "restricted"
+      "pod-security.kubernetes.io/warn"  = "restricted"
+      },
+      each.value.extra_labels
+    )
   }
 }

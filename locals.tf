@@ -52,28 +52,44 @@ locals {
   # `enabled` mirrors the component's install_* flag, so a namespace is never
   # created for a component that is not installed.
   platform_components = {
-    "ack-system"       = { application = "ack", segment = "platform", enabled = var.install_ack_certificates }
-    "apisix"           = { application = "apisix", segment = "edge", enabled = var.install_apisix }
-    "arc-systems"      = { application = "arc-controller", segment = "platform", enabled = var.install_arc }
-    "cert-manager"     = { application = "cert-manager", segment = "platform", enabled = var.install_cert_manager }
-    "external-dns"     = { application = "external-dns", segment = "platform", enabled = var.install_external_dns }
-    "external-secrets" = { application = "external-secrets", segment = "platform", enabled = var.install_external_secrets }
-    "falcon-system"    = { application = "falcon", segment = "platform", enabled = var.install_falcon }
-    "karpenter"        = { application = "karpenter", segment = "platform", enabled = var.install_karpenter }
-    "keda"             = { application = "keda", segment = "platform", enabled = var.install_keda }
-    "opa"              = { application = "opa", segment = "platform", enabled = var.install_opa }
+    "ack-system"       = { application = "ack", segment = "platform", extra_labels = {}, enabled = var.install_ack_certificates }
+    "apisix"           = { application = "apisix", segment = "edge", extra_labels = {}, enabled = var.install_apisix }
+    "arc-systems"      = { application = "arc-controller", segment = "platform", extra_labels = {}, enabled = var.install_arc }
+    "cert-manager"     = { application = "cert-manager", segment = "platform", extra_labels = {}, enabled = var.install_cert_manager }
+    "external-dns"     = { application = "external-dns", segment = "platform", extra_labels = {}, enabled = var.install_external_dns }
+    "external-secrets" = { application = "external-secrets", segment = "platform", extra_labels = {}, enabled = var.install_external_secrets }
+    # falcon-system carried Pod Security and Gatekeeper-exemption labels in
+    # k8s-manifests before ownership moved here. They come with it: an EDR sensor
+    # needs host PID, host network and elevated capabilities to see what it
+    # exists to see, so `restricted` would defeat its purpose and
+    # no-privileged-containers would reject its DaemonSet. Moving the namespace
+    # without these would have broken the sensor silently.
+    "falcon-system" = {
+      application = "falcon"
+      segment     = "platform"
+      enabled     = var.install_falcon
+      extra_labels = {
+        "admission.gatekeeper.sh/ignore"     = "true"
+        "pod-security.kubernetes.io/enforce" = "privileged"
+        "pod-security.kubernetes.io/audit"   = "restricted"
+        "pod-security.kubernetes.io/warn"    = "restricted"
+      }
+    }
+    "karpenter" = { application = "karpenter", segment = "platform", extra_labels = {}, enabled = var.install_karpenter }
+    "keda"      = { application = "keda", segment = "platform", extra_labels = {}, enabled = var.install_keda }
+    "opa"       = { application = "opa", segment = "platform", extra_labels = {}, enabled = var.install_opa }
 
     # CI runners execute arbitrary repository code. `platform` is the
     # least-wrong of the four segments rather than a good fit — none of
     # edge/platform/app/data was designed for a workload whose legitimate
     # traffic is egress to GitHub. Labelled so the namespace is attributable and
     # admissible; the segmentation question is tracked, not answered here.
-    "arc-runners" = { application = "arc-runners", segment = "platform", enabled = var.install_arc }
+    "arc-runners" = { application = "arc-runners", segment = "platform", extra_labels = {}, enabled = var.install_arc }
 
     # Excluded from every Gatekeeper constraint, so it would be admitted
     # unlabelled. Labelled anyway — the exclusion exists to stop Gatekeeper
     # blocking its own installation, not to declare its cost unattributable.
-    "gatekeeper-system" = { application = "gatekeeper", segment = "platform", enabled = var.install_gatekeeper }
+    "gatekeeper-system" = { application = "gatekeeper", segment = "platform", extra_labels = {}, enabled = var.install_gatekeeper }
   }
 
   # Only the components actually being installed.

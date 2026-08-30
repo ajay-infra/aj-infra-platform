@@ -16,6 +16,12 @@ Namespaces are now declared in `namespaces.tf` from a single `platform_component
 ### Added — `platform_components`, one map behind three things that used to disagree
 Namespace labels, the `Application` tag on AWS resources, and which `CiliumNetworkPolicy` selects a component all derive from the same entry. `segment` is **stated, never defaulted** — `apisix` is `edge` and everything else is `platform`, and no default can know that.
 
+### Changed — `falcon-system` ownership moved here, with all of its labels
+It was declared in `k8s-manifests` **and** created by Helm, so whichever landed first decided whether it had labels. Terraform installs Falcon, so Terraform now declares it — and it carries the Pod Security and Gatekeeper-exemption labels the k8s-manifests version had. An EDR sensor needs host PID, host network and elevated capabilities, so `restricted` would defeat its purpose and `no-privileged-containers` would reject its DaemonSet. Moving the namespace without them would have broken the sensor silently. Its `team` label changes from `platform` to `infra-core`, which is what this repo's `var.team` says.
+
+### Added — Pod Security `audit` and `warn` on every platform namespace
+`enforce` is deliberately left unset. A wrong enforce level **blocks** the component, and the charts cannot be fetched offline to confirm what each one needs; audit and warn surface the same information in the log without that risk. `falcon-system` is the exception and states its own.
+
 ### Added — `Application` tag on all 27 taggable AWS resources
 Nine components own IAM (`ack_acm`, `ack_route53`, `arc_runner`, `aws_lbc`, `cert_manager`, `external_dns`, `external_secrets`, `karpenter`, `keda`), and every one of their roles, policies and Pod Identity associations carried an **identical tag set**. The only thing distinguishing cert-manager's role from karpenter's was the resource *name*, which is not a queryable tag.
 
