@@ -4,7 +4,7 @@
 # ESO ExternalSecret syncs the CID into K8s Secret "falcon-credentials"
 # in the falcon-system namespace before this Helm release is applied.
 #
-# OPA Gatekeeper: the no-privileged-containers constraint in k8s-manifests
+# OPA Gatekeeper: the no-privileged-containers constraint in aj-cluster-baseline
 # has an exemption for falcon-system namespace.
 #
 # No IAM role needed — Falcon agent calls CrowdStrike cloud endpoints directly

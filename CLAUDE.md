@@ -134,7 +134,7 @@ terraform apply -var-file=envs/dev.tfvars
 
 ## Known TODOs
 
-- [ ] Karpenter NodePool + EC2NodeClass manifests live in k8s-manifests (not here)
+- [ ] Karpenter NodePool + EC2NodeClass manifests live in aj-cluster-baseline (not here)
 - [ ] SQS queue for Karpenter spot interruption handler — create in aj-infra-release, pass ARN via var
 - [ ] Wire VPC ID into AWS LBC properly (currently using subnet[0] as placeholder)
 - [ ] Falcon `install_falcon = true` in dev/staging once CID is stored in Secrets Manager
@@ -169,7 +169,7 @@ at export, so withholding `acm:ExportCertificate` stops the private key leaving
 but does **not** stop the bill.
 
 The enforcement point is therefore admission control:
-`k8s-manifests/policies/constraints/deny-acm-exportable.yaml`, cluster-wide and
+`aj-cluster-baseline/policies/constraints/deny-acm-exportable.yaml`, cluster-wide and
 unconditional, with `gator` tests in both directions. The one case `exportTo`
 serves — in-cluster TLS termination — is already covered free by cert-manager.
 

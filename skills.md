@@ -55,6 +55,6 @@ fmt, validate (no plan — this module depends on live remote state, so a meanin
 - **Never set `spec.exportTo` on an ACK `Certificate`.** It requests an
   exportable certificate at $7/FQDN and $79/wildcard, charged at issuance AND
   every renewal (~$158/yr per wildcard). Blocked cluster-wide by the
-  `deny-acm-exportable` Gatekeeper constraint in `k8s-manifests`. cert-manager
+  `deny-acm-exportable` Gatekeeper constraint in `aj-cluster-baseline`. cert-manager
   does in-cluster TLS for free.
 - Cross-check this repo's "installed add-ons" status against `aj-infra-context/CLAUDE.md`'s roadmap and flag drift

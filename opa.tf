@@ -7,7 +7,7 @@
 # OPA Data API (`/v1/data/...`) that the APISIX plugin queries, so it cannot be
 # reused. Same policy language, different deployment, different job:
 #
-#   Gatekeeper (k8s-manifests/policies)  admission control on K8s objects
+#   Gatekeeper (aj-cluster-baseline/policies)  admission control on K8s objects
 #   this OPA                             authorization on API requests
 #
 # ── Why OPA verifies the JWT, not the gateway ────────────────────────────────
@@ -26,7 +26,7 @@
 # The chart bundles kube-mgmt, which loads Rego from labelled ConfigMaps. That
 # is deliberate — it is the pattern that worked on the previous estate, and it
 # keeps policy in git under ArgoCD rather than in a bundle server nobody owns.
-# Policies live in k8s-manifests; this repo installs the engine only.
+# Policies live in aj-cluster-baseline; this repo installs the engine only.
 #
 # ⚠ JWKS: do NOT fetch keys per request. Either ship the JWKS in policy data or
 # use http.send with explicit caching. Key rotation should be a data refresh.

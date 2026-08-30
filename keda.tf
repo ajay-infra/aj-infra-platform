@@ -1,5 +1,5 @@
 # ── KEDA — event-driven pod autoscaler ───────────────────────────────────────
-# Replaces plain HPA. ScaledObject CRDs live in k8s-manifests (GitOps).
+# Replaces plain HPA. ScaledObject CRDs live in aj-cluster-baseline (GitOps).
 # Do NOT install both KEDA and HPA on the same Deployment.
 #
 # Scalers in use across the platform:
