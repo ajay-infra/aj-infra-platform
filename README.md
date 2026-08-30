@@ -27,7 +27,7 @@ L5 in the platform's infrastructure layer stack — see `aj-infra-context/CLAUDE
 
 All 12 install via real `helm_release` resources — see `helm.tf` (Cilium/AWS LBC/Karpenter/cert-manager/External Secrets/metrics-server) and the per-add-on files (`keda.tf`, `apisix.tf`, `opa.tf`, `external-dns.tf`, `falcon.tf`, `arc.tf`, `gatekeeper.tf`).
 
-`versions.json` is the single source of truth for chart versions — keep it in sync with `variables.tf` defaults and `envs/*.tfvars`.
+Chart versions are passed per cluster from `aj-infra-release/envs/workload/<mode>/<cluster>/platform.tfvars`. `variables.tf` holds fallback defaults.
 
 ---
 
@@ -52,7 +52,7 @@ Triggered automatically as Stage 3 of `aj-infra-release`'s `provision-eks.yml`, 
 
 ## Usage
 
-tfvars come from `aj-infra-release/envs/workload/<mode>/<env>/common.tfvars`, passed via `-var-file`; `color` is injected as `-var="color=..."` by the pipeline. Per-environment overrides also live in this repo's own `envs/*.tfvars` (`dev.tfvars`, `staging.tfvars`, `prod-blue.tfvars`).
+tfvars come from `aj-infra-release/envs/workload/<mode>/<env>/common.tfvars`, passed via `-var-file`; `color` is injected as `-var="color=..."` by the pipeline. Per-cluster overrides live in `aj-infra-release/envs/workload/<mode>/<cluster>/platform.tfvars`, also passed via `-var-file`. They used to live in this repo and **the pipeline never passed them**, so the module ran on variable defaults.
 
 ```bash
 terraform init \
@@ -60,8 +60,8 @@ terraform init \
   -backend-config="key=dev/aj-infra-platform/terraform.tfstate" \
   -backend-config="region=us-east-1"
 
-terraform plan -var-file=envs/dev.tfvars
-terraform apply -var-file=envs/dev.tfvars
+terraform plan -var-file=envs/example.tfvars
+terraform apply -var-file=envs/example.tfvars
 ```
 
 GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
@@ -89,7 +89,7 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 | `arc.tf` | Actions Runner Controller — Pod Identity |
 | `gatekeeper.tf` | OPA Gatekeeper |
 | `outputs.tf` | IAM role ARNs, installed chart versions map |
-| `versions.json` | Single source of truth for all pinned versions |
+
 | `envs/*.tfvars` | Per-environment variable overrides |
 
 ---
@@ -99,7 +99,7 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 - **Remote state, not a module call** — EKS and VPC are separate repos with their own state; this module reads outputs via `data.terraform_remote_state`, keeping blast radii separate.
 - **Helm provider uses exec auth** — `aws eks get-token` via the AWS CLI exec plugin. Requires valid AWS credentials at apply time (GitHub OIDC in CI).
 - **Cilium values from EKS output** — `cilium_helm_values` from the EKS module is consumed directly, no duplication.
-- **Add-on toggles** — `install_karpenter`, `install_cert_manager`, etc. let dev environments skip expensive or unnecessary add-ons (see `envs/dev.tfvars` for what's on/off by default).
+- **Add-on toggles** — `install_karpenter`, `install_cert_manager`, etc. let a cluster skip expensive or unnecessary add-ons. Set per cluster in `aj-infra-release/envs/workload/<mode>/<cluster>/platform.tfvars`; nine of the twelve default to `true`, so an unset flag installs the component.
 
 ---
 

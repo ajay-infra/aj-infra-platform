@@ -54,7 +54,15 @@ variable "eks_state_key" {
 }
 
 # ── Helm Chart Versions ───────────────────────────────────────────────────────
-# Pin all chart versions here. Keep in sync with versions.json.
+# These are FALLBACK defaults. The real per-cluster values are passed by
+# bootstrap-workload.yml from aj-infra-release's
+# envs/workload/<mode>/<cluster>/platform.tfvars.
+#
+# versions.json used to sit beside this file calling itself "the single source
+# of truth for all pinned versions". Nothing read it, and it had to be
+# hand-synced with these defaults — so it was a fourth copy of the chart list
+# that would be believed during an upgrade and could not be right. Deleted
+# 2026-08-30.
 
 variable "chart_version_cilium" {
   type    = string

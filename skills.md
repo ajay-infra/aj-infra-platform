@@ -19,7 +19,7 @@ Note: `v1.0.0` (2026-03-29) only covers the original 6 add-ons (Cilium, AWS LBC,
 | `color` | blue \| green |
 | `state_bucket` / `eks_state_key` | Where to read EKS remote state from |
 | `install_<addon>` | Per-add-on toggle (karpenter, cert_manager, external_secrets, metrics_server, gatekeeper, keda, kong, external_dns, falcon, arc, ack_certificates) |
-| `chart_version_<addon>` | Per-add-on Helm chart version — keep in sync with `versions.json` |
+| `chart_version_<addon>` | Per-add-on Helm chart version — fallback default; the real value comes from `platform.tfvars` |
 | `external_dns_domain_filter` | Root domain external-dns manages |
 | `route53_hosted_zone_id` | Zone the ACK Route53 controller may write ACM validation CNAMEs into. Required when `install_ack_certificates` is true |
 | `team`, `cost_center`, `tags` | Standard tagging |
@@ -46,7 +46,7 @@ On this module's own IAM resources: `team`, `cost_center`, plus whatever's in `v
 fmt, validate (no plan — this module depends on live remote state, so a meaningful dry-run plan isn't possible without a real EKS cluster), security scan
 
 ## Agentic capabilities
-- Detect chart version drift between `versions.json` and `variables.tf`/`envs/*.tfvars`
+- Detect chart version drift between `variables.tf` defaults and `aj-infra-release/envs/workload/**/platform.tfvars`
 - Flag add-ons with `install_* = true` but no corresponding IAM/Pod Identity wiring
 - Validate `external_dns_domain_filter` isn't empty before enabling `install_external_dns` in a real environment
 - `install_ack_certificates` installs BOTH the ACM and Route53 controllers — the
