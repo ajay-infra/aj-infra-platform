@@ -4,6 +4,36 @@ All notable changes to this module are documented here. Format loosely follows [
 
 ## [Unreleased]
 
+### Fixed — every platform namespace was created unlabelled, and three things broke quietly
+Eleven namespaces were created by `create_namespace = true` on a `helm_release`, which produces a namespace with **no labels at all**.
+
+- **The platform could not install itself onto a cluster running its own policies.** `require-cost-labels` and `require-segment-label` are both at `deny` and exclude only `kube-system`, `kube-public`, `kube-node-lease`, `default` and `gatekeeper-system` — so nine of these namespaces would have been rejected at admission.
+- **Every platform component was fail-open to Cilium.** The `CiliumNetworkPolicy` set selects on `io.cilium.k8s.namespace.labels.platform.aj/segment`, and Cilium leaves an endpoint unrestricted until a policy selects it. No label, no policy, full connectivity — **including `apisix`, the internet-facing edge**. The segmentation work was inert for the components it was designed around.
+- **Container cost was attributable no further than "this cluster".**
+
+Namespaces are now declared in `namespaces.tf` from a single `platform_components` map, and each `helm_release` references the namespace resource rather than naming it as a string — so the dependency is implicit and cannot be forgotten.
+
+### Added — `platform_components`, one map behind three things that used to disagree
+Namespace labels, the `Application` tag on AWS resources, and which `CiliumNetworkPolicy` selects a component all derive from the same entry. `segment` is **stated, never defaulted** — `apisix` is `edge` and everything else is `platform`, and no default can know that.
+
+### Changed — `falcon-system` ownership moved here, with all of its labels
+It was declared in `k8s-manifests` **and** created by Helm, so whichever landed first decided whether it had labels. Terraform installs Falcon, so Terraform now declares it — and it carries the Pod Security and Gatekeeper-exemption labels the k8s-manifests version had. An EDR sensor needs host PID, host network and elevated capabilities, so `restricted` would defeat its purpose and `no-privileged-containers` would reject its DaemonSet. Moving the namespace without them would have broken the sensor silently. Its `team` label changes from `platform` to `infra-core`, which is what this repo's `var.team` says.
+
+### Added — Pod Security `audit` and `warn` on every platform namespace
+`enforce` is deliberately left unset. A wrong enforce level **blocks** the component, and the charts cannot be fetched offline to confirm what each one needs; audit and warn surface the same information in the log without that risk. `falcon-system` is the exception and states its own.
+
+### Added — `Application` tag on all 27 taggable AWS resources
+Nine components own IAM (`ack_acm`, `ack_route53`, `arc_runner`, `aws_lbc`, `cert_manager`, `external_dns`, `external_secrets`, `karpenter`, `keda`), and every one of their roles, policies and Pod Identity associations carried an **identical tag set**. The only thing distinguishing cert-manager's role from karpenter's was the resource *name*, which is not a queryable tag.
+
+### Fixed — the `Environment` tag carried values in no vocabulary
+`full_tags` set `Environment = var.environment`, which is the cluster slug (`dev`, `staging`, `prod`). Two of those three stopped being stages in the 2026-08-28 migration. `var.environment` is load-bearing for resource names and the remote state key so it cannot be renamed; a new `stage` variable carries the tag value instead, validated against the five-value vocabulary. `prod-blue.tfvars` had been overriding `Environment` by hand — the tell that this was already known to be wrong.
+
+### Fixed — stale identifiers
+`Project` was `ai-search` and `Repository` was `infra-platform`. Both now `aj-infra-platform`. `Class = platform` and `Customer = internal` added, which begins the emit side the SaaS tag guardrail is waiting on.
+
+### Known gap — scheduling is not wired
+Every Karpenter NodePool taints `platform.aj/segment: NoSchedule`, and exactly one Helm release (falcon) sets a toleration. The `platform` NodePool therefore cannot receive the add-ons it was built for; they land on the managed general node group. **Not fixed here on purpose:** the toleration value path differs per chart, a wrong `helm_release` `set` path silently does nothing, and the charts cannot be fetched offline to confirm. Guessing would ship exactly the kind of rule-that-no-ops this change exists to remove.
+
 ### Added
 - **Keycloak (`keycloak.tf`, `keycloakx` 7.3.0 / app 26.7.2), off by default.** The identity provider that issues the tokens OPA verifies. Chosen over Zitadel and Cognito because it is already proven in operation here, and because **Organizations** (GA in Keycloak 26) solves the exact failure that shaped the API layer.
   - **Why Organizations is the point:** a prior estate ran realm-per-tenant and reached ~24 issuers in one namespace, OOM-killing an Envoy-based gateway against a 16-provider ceiling. Organizations puts tenants *inside a single realm*, each with its own members and its own federated IdP — so a customer bringing their own IdP is brokered and the token reaching the gateway is still Keycloak-issued. One issuer, tenant as a claim, issuer count flat as tenants grow.

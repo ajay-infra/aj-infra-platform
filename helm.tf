@@ -54,9 +54,11 @@ resource "helm_release" "cert_manager" {
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
   version    = var.chart_version_cert_manager
-  namespace  = "cert-manager"
+  namespace  = kubernetes_namespace.platform["cert-manager"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "installCRDs"
@@ -132,9 +134,11 @@ resource "helm_release" "karpenter" {
   repository = "oci://public.ecr.aws/karpenter"
   chart      = "karpenter"
   version    = var.chart_version_karpenter
-  namespace  = "karpenter"
+  namespace  = kubernetes_namespace.platform["karpenter"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "settings.clusterName"
@@ -167,9 +171,11 @@ resource "helm_release" "external_secrets" {
   repository = "https://charts.external-secrets.io"
   chart      = "external-secrets"
   version    = var.chart_version_external_secrets
-  namespace  = "external-secrets"
+  namespace  = kubernetes_namespace.platform["external-secrets"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"

@@ -63,6 +63,8 @@ resource "aws_iam_policy" "arc_runner" {
       },
     ]
   })
+
+  tags = merge(local.full_tags, { Application = "arc-controller" })
 }
 
 resource "aws_iam_role" "arc_runner" {
@@ -77,6 +79,8 @@ resource "aws_iam_role" "arc_runner" {
       Action    = ["sts:AssumeRole", "sts:TagSession"]
     }]
   })
+
+  tags = merge(local.full_tags, { Application = "arc-controller" })
 }
 
 resource "aws_iam_role_policy_attachment" "arc_runner" {
@@ -88,9 +92,11 @@ resource "aws_iam_role_policy_attachment" "arc_runner" {
 resource "aws_eks_pod_identity_association" "arc_runner" {
   count           = var.install_arc ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "arc-runners"
+  namespace       = kubernetes_namespace.platform["arc-runners"].metadata[0].name
   service_account = "arc-runner-${var.environment}"
   role_arn        = aws_iam_role.arc_runner[0].arn
+
+  tags = merge(local.full_tags, { Application = "arc-controller" })
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -105,9 +111,11 @@ resource "helm_release" "arc_controller" {
   repository = "oci://ghcr.io/actions/actions-runner-controller-charts"
   chart      = "gha-runner-scale-set-controller"
   version    = var.chart_version_arc_controller
-  namespace  = "arc-systems"
+  namespace  = kubernetes_namespace.platform["arc-systems"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "replicaCount"

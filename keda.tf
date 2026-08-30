@@ -39,7 +39,7 @@ resource "aws_iam_policy" "keda" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "keda" })
 }
 
 resource "aws_iam_role" "keda" {
@@ -55,7 +55,7 @@ resource "aws_iam_role" "keda" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "keda" })
 }
 
 resource "aws_iam_role_policy_attachment" "keda" {
@@ -67,10 +67,10 @@ resource "aws_iam_role_policy_attachment" "keda" {
 resource "aws_eks_pod_identity_association" "keda" {
   count           = var.install_keda ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "keda"
+  namespace       = kubernetes_namespace.platform["keda"].metadata[0].name
   service_account = "keda-operator"
   role_arn        = aws_iam_role.keda[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "keda" })
 }
 
 # ── Helm ──────────────────────────────────────────────────────────────────────
@@ -82,9 +82,11 @@ resource "helm_release" "keda" {
   repository = "https://kedacore.github.io/charts"
   chart      = "keda"
   version    = var.chart_version_keda
-  namespace  = "keda"
+  namespace  = kubernetes_namespace.platform["keda"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "podIdentity.aws.irsa.enabled"

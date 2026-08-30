@@ -11,9 +11,11 @@ resource "helm_release" "gatekeeper" {
   repository = "https://open-policy-agent.github.io/gatekeeper/charts"
   chart      = "gatekeeper"
   version    = var.chart_version_gatekeeper
-  namespace  = "gatekeeper-system"
+  namespace  = kubernetes_namespace.platform["gatekeeper-system"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "auditInterval"

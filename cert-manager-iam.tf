@@ -83,7 +83,7 @@ resource "aws_iam_policy" "cert_manager" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "cert-manager" })
 }
 
 resource "aws_iam_role" "cert_manager" {
@@ -99,7 +99,7 @@ resource "aws_iam_role" "cert_manager" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "cert-manager" })
 }
 
 resource "aws_iam_role_policy_attachment" "cert_manager" {
@@ -114,8 +114,8 @@ resource "aws_iam_role_policy_attachment" "cert_manager" {
 resource "aws_eks_pod_identity_association" "cert_manager" {
   count           = var.install_cert_manager ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "cert-manager"
+  namespace       = kubernetes_namespace.platform["cert-manager"].metadata[0].name
   service_account = "cert-manager"
   role_arn        = aws_iam_role.cert_manager[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "cert-manager" })
 }

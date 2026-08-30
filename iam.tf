@@ -129,7 +129,7 @@ resource "aws_iam_policy" "aws_lbc" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "aws-lbc" })
 }
 
 resource "aws_iam_role" "aws_lbc" {
@@ -144,7 +144,7 @@ resource "aws_iam_role" "aws_lbc" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "aws-lbc" })
 }
 
 resource "aws_iam_role_policy_attachment" "aws_lbc" {
@@ -157,7 +157,7 @@ resource "aws_eks_pod_identity_association" "aws_lbc" {
   namespace       = "kube-system"
   service_account = "aws-load-balancer-controller"
   role_arn        = aws_iam_role.aws_lbc.arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "aws-lbc" })
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ resource "aws_iam_policy" "karpenter" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "karpenter" })
 }
 
 resource "aws_iam_role" "karpenter" {
@@ -235,7 +235,7 @@ resource "aws_iam_role" "karpenter" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "karpenter" })
 }
 
 resource "aws_iam_role_policy_attachment" "karpenter" {
@@ -247,10 +247,10 @@ resource "aws_iam_role_policy_attachment" "karpenter" {
 resource "aws_eks_pod_identity_association" "karpenter" {
   count           = var.install_karpenter ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "karpenter"
+  namespace       = kubernetes_namespace.platform["karpenter"].metadata[0].name
   service_account = "karpenter"
   role_arn        = aws_iam_role.karpenter[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "karpenter" })
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -296,7 +296,7 @@ resource "aws_iam_policy" "external_secrets" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "external-secrets" })
 }
 
 resource "aws_iam_role" "external_secrets" {
@@ -312,7 +312,7 @@ resource "aws_iam_role" "external_secrets" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "external-secrets" })
 }
 
 resource "aws_iam_role_policy_attachment" "external_secrets" {
@@ -324,8 +324,8 @@ resource "aws_iam_role_policy_attachment" "external_secrets" {
 resource "aws_eks_pod_identity_association" "external_secrets" {
   count           = var.install_external_secrets ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "external-secrets"
+  namespace       = kubernetes_namespace.platform["external-secrets"].metadata[0].name
   service_account = "external-secrets"
   role_arn        = aws_iam_role.external_secrets[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "external-secrets" })
 }
