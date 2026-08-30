@@ -59,7 +59,7 @@ locals {
     "external-dns"     = { application = "external-dns", segment = "platform", extra_labels = {}, enabled = var.install_external_dns }
     "external-secrets" = { application = "external-secrets", segment = "platform", extra_labels = {}, enabled = var.install_external_secrets }
     # falcon-system carried Pod Security and Gatekeeper-exemption labels in
-    # k8s-manifests before ownership moved here. They come with it: an EDR sensor
+    # aj-cluster-baseline before ownership moved here. They come with it: an EDR sensor
     # needs host PID, host network and elevated capabilities to see what it
     # exists to see, so `restricted` would defeat its purpose and
     # no-privileged-containers would reject its DaemonSet. Moving the namespace

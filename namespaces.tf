@@ -19,10 +19,10 @@
 # The rule now: THE MECHANISM THAT INSTALLS A COMPONENT DECLARES ITS NAMESPACE.
 # Terraform installs these, so Terraform declares them. ArgoCD-installed
 # components use managedNamespaceMetadata in their ApplicationSet, and
-# k8s-manifests keeps only the workload namespaces no installer owns.
+# aj-cluster-baseline keeps only the workload namespaces no installer owns.
 #
 # Ownership follows installation because the alternative has a race: falcon-system
-# was declared in k8s-manifests AND created by helm, so whichever landed first
+# was declared in aj-cluster-baseline AND created by helm, so whichever landed first
 # decided whether it had labels.
 # ─────────────────────────────────────────────────────────────────────────────
 

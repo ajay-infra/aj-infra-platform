@@ -119,13 +119,13 @@ variable "install_arc" {
 
 variable "install_gatekeeper" {
   type        = bool
-  description = "Install OPA Gatekeeper admission controller. ConstraintTemplates + Constraints live in k8s-manifests."
+  description = "Install OPA Gatekeeper admission controller. ConstraintTemplates + Constraints live in aj-cluster-baseline."
   default     = true
 }
 
 variable "install_keda" {
   type        = bool
-  description = "Install KEDA event-driven autoscaler. ScaledObjects live in k8s-manifests."
+  description = "Install KEDA event-driven autoscaler. ScaledObjects live in aj-cluster-baseline."
   default     = true
 }
 

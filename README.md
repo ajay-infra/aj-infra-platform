@@ -115,7 +115,7 @@ GitHub secrets required in CI: `TF_STATE_BUCKET`, `AWS_DEPLOY_ROLE_ARN`.
 
 ## Known TODOs
 
-- [ ] Karpenter NodePool + EC2NodeClass manifests live in `k8s-manifests`, not here
+- [ ] Karpenter NodePool + EC2NodeClass manifests live in `aj-cluster-baseline`, not here
 - [ ] SQS queue for Karpenter spot interruption handler — create in `aj-infra-release`, pass ARN via var
 - [ ] Wire VPC ID into AWS LBC properly — currently uses `data.terraform_remote_state.eks.outputs.active_private_subnets[0]` (a subnet ID) as a placeholder for `vpcId`
 - [ ] `install_falcon = true` in dev/staging once the Falcon CID is stored in Secrets Manager

@@ -1,6 +1,6 @@
 # ── OPA Gatekeeper — admission controller + policy enforcement ────────────────
 # Installs the Gatekeeper controller only. ConstraintTemplates + Constraints
-# (the actual policies) live in k8s-manifests and are synced by ArgoCD.
+# (the actual policies) live in aj-cluster-baseline and are synced by ArgoCD.
 #
 # No IAM role needed — Gatekeeper only talks to the K8s API server, not AWS.
 

@@ -42,7 +42,7 @@
 # leaving but does NOT stop the bill.
 #
 # The only preventive control is admission control:
-#   k8s-manifests/policies/constraints/deny-acm-exportable.yaml
+#   aj-cluster-baseline/policies/constraints/deny-acm-exportable.yaml
 #
 # The single case exportTo serves — something in-cluster terminating TLS — is
 # already covered, for free, by cert-manager.

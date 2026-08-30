@@ -4,7 +4,7 @@
 #
 # Why DNS-01 and not HTTP-01, which would need no AWS access at all:
 # Let's Encrypt will not issue a WILDCARD certificate over HTTP-01, and
-# k8s-manifests/cert-manager/certificate-kong-wildcard.yaml requests
+# aj-cluster-baseline/cert-manager/certificate-kong-wildcard.yaml requests
 # *.platform.<domain>. The wildcard is what lets a blue/green cutover happen
 # without touching TLS — one certificate already covers blue., green. and
 # active. So DNS-01 is a requirement, not a preference, and this IAM is the

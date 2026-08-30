@@ -111,7 +111,7 @@ resource "helm_release" "apisix_ingress_controller" {
 
   # Installs ApisixRoute / ApisixConsumer / ApisixUpstream /
   # ApisixPluginConfig, and supports Gateway API resources. Route and consumer
-  # definitions live in k8s-manifests and are synced by ArgoCD — this repo
+  # definitions live in aj-cluster-baseline and are synced by ArgoCD — this repo
   # installs the controller, never the routes.
   set {
     name  = "resources.requests.cpu"
