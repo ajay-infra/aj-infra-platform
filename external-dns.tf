@@ -35,7 +35,7 @@ resource "aws_iam_policy" "external_dns" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "external-dns" })
 }
 
 resource "aws_iam_role" "external_dns" {
@@ -51,7 +51,7 @@ resource "aws_iam_role" "external_dns" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "external-dns" })
 }
 
 resource "aws_iam_role_policy_attachment" "external_dns" {
@@ -63,10 +63,10 @@ resource "aws_iam_role_policy_attachment" "external_dns" {
 resource "aws_eks_pod_identity_association" "external_dns" {
   count           = var.install_external_dns ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "external-dns"
+  namespace       = kubernetes_namespace.platform["external-dns"].metadata[0].name
   service_account = "external-dns"
   role_arn        = aws_iam_role.external_dns[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "external-dns" })
 }
 
 # ── Helm ──────────────────────────────────────────────────────────────────────
@@ -78,9 +78,11 @@ resource "helm_release" "external_dns" {
   repository = "https://kubernetes-sigs.github.io/external-dns/"
   chart      = "external-dns"
   version    = var.chart_version_external_dns
-  namespace  = "external-dns"
+  namespace  = kubernetes_namespace.platform["external-dns"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "provider"

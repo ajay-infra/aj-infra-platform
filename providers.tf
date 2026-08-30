@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "= 2.12.1"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "= 2.35.1"
+    }
   }
 }
 
@@ -25,6 +29,24 @@ provider "aws" {
 # On first apply of a new environment, run:
 #   terraform apply -target=data.terraform_remote_state.eks
 #   (verify state is readable) then: terraform apply
+# Same exec auth as the helm provider. Added so Terraform declares the platform
+# namespaces itself instead of letting `create_namespace = true` produce
+# unlabelled ones — see namespaces.tf.
+provider "kubernetes" {
+  host                   = data.terraform_remote_state.eks.outputs.cluster_endpoint
+  cluster_ca_certificate = base64decode(data.terraform_remote_state.eks.outputs.cluster_ca_data)
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args = [
+      "eks", "get-token",
+      "--cluster-name", data.terraform_remote_state.eks.outputs.cluster_name,
+      "--region", var.aws_region
+    ]
+  }
+}
+
 provider "helm" {
   kubernetes {
     host                   = data.terraform_remote_state.eks.outputs.cluster_endpoint

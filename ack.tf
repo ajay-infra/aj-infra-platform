@@ -89,7 +89,7 @@ resource "aws_iam_policy" "ack_acm" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "ack" })
 }
 
 resource "aws_iam_role" "ack_acm" {
@@ -105,7 +105,7 @@ resource "aws_iam_role" "ack_acm" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "ack" })
 }
 
 resource "aws_iam_role_policy_attachment" "ack_acm" {
@@ -117,10 +117,10 @@ resource "aws_iam_role_policy_attachment" "ack_acm" {
 resource "aws_eks_pod_identity_association" "ack_acm" {
   count           = var.install_ack_certificates ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "ack-system"
+  namespace       = kubernetes_namespace.platform["ack-system"].metadata[0].name
   service_account = "ack-acm-controller"
   role_arn        = aws_iam_role.ack_acm[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "ack" })
 }
 
 # ── Route53 controller: IAM ───────────────────────────────────────────────────
@@ -182,7 +182,7 @@ resource "aws_iam_policy" "ack_route53" {
     ]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "ack" })
 
   lifecycle {
     # variable validation cannot see another variable, so the "required when
@@ -210,7 +210,7 @@ resource "aws_iam_role" "ack_route53" {
     }]
   })
 
-  tags = local.full_tags
+  tags = merge(local.full_tags, { Application = "ack" })
 }
 
 resource "aws_iam_role_policy_attachment" "ack_route53" {
@@ -222,10 +222,10 @@ resource "aws_iam_role_policy_attachment" "ack_route53" {
 resource "aws_eks_pod_identity_association" "ack_route53" {
   count           = var.install_ack_certificates ? 1 : 0
   cluster_name    = local.cluster_name
-  namespace       = "ack-system"
+  namespace       = kubernetes_namespace.platform["ack-system"].metadata[0].name
   service_account = "ack-route53-controller"
   role_arn        = aws_iam_role.ack_route53[0].arn
-  tags            = local.full_tags
+  tags            = merge(local.full_tags, { Application = "ack" })
 }
 
 # ── Helm ──────────────────────────────────────────────────────────────────────
@@ -241,9 +241,11 @@ resource "helm_release" "ack_acm" {
   repository = "oci://public.ecr.aws/aws-controllers-k8s"
   chart      = "acm-chart"
   version    = var.chart_version_ack_acm
-  namespace  = "ack-system"
+  namespace  = kubernetes_namespace.platform["ack-system"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "aws.region"
@@ -282,9 +284,11 @@ resource "helm_release" "ack_route53" {
   repository = "oci://public.ecr.aws/aws-controllers-k8s"
   chart      = "route53-chart"
   version    = var.chart_version_ack_route53
-  namespace  = "ack-system"
+  namespace  = kubernetes_namespace.platform["ack-system"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   set {
     name  = "aws.region"

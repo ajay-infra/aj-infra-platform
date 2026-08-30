@@ -17,9 +17,11 @@ resource "helm_release" "falcon" {
   repository = "https://crowdstrike.github.io/falcon-helm"
   chart      = "falcon-sensor"
   version    = var.chart_version_falcon
-  namespace  = "falcon-system"
+  namespace  = kubernetes_namespace.platform["falcon-system"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   # Use kernel backend (default; requires no init container)
   set {

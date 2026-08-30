@@ -41,9 +41,11 @@ resource "helm_release" "apisix" {
   repository = "https://apache.github.io/apisix-helm-chart"
   chart      = "apisix"
   version    = var.chart_version_apisix
-  namespace  = "apisix"
+  namespace  = kubernetes_namespace.platform["apisix"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   # Exposed via an NLB, the same shape Kong used — AWS LBC provisions it from
   # the Service. CloudFront's origin points at this through active.<domain>,
@@ -105,7 +107,7 @@ resource "helm_release" "apisix_ingress_controller" {
   repository = "https://apache.github.io/apisix-helm-chart"
   chart      = "apisix-ingress-controller"
   version    = var.chart_version_apisix_ingress
-  namespace  = "apisix"
+  namespace  = kubernetes_namespace.platform["apisix"].metadata[0].name
 
   # Installs ApisixRoute / ApisixConsumer / ApisixUpstream /
   # ApisixPluginConfig, and supports Gateway API resources. Route and consumer

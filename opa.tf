@@ -38,9 +38,11 @@ resource "helm_release" "opa" {
   repository = "https://open-policy-agent.github.io/kube-mgmt/charts"
   chart      = "opa-kube-mgmt"
   version    = var.chart_version_opa
-  namespace  = "opa"
+  namespace  = kubernetes_namespace.platform["opa"].metadata[0].name
 
-  create_namespace = true
+  # Declared in namespaces.tf so it carries labels. A Helm-created namespace
+  # has none, which made it fail-open to Cilium and inadmissible to Gatekeeper.
+  create_namespace = false
 
   # This OPA answers API authorization queries. It is NOT an admission
   # controller — Gatekeeper owns that, and enabling admission here would put two

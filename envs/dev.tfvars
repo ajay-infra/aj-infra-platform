@@ -1,3 +1,4 @@
+stage       = "nonprod" # the Environment TAG and guardrail class
 environment = "dev"
 color       = "blue"
 aws_region  = "us-east-1"

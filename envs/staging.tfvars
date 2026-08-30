@@ -1,3 +1,4 @@
+stage       = "preprod" # the Environment TAG and guardrail class
 environment = "staging"
 color       = "blue"
 aws_region  = "us-east-1"

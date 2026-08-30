@@ -1,3 +1,4 @@
+stage       = "prod" # the Environment TAG and guardrail class
 environment = "prod"
 color       = "blue"
 aws_region  = "us-east-1"
@@ -38,7 +39,8 @@ tf_state_bucket = "" # injected by pipeline
 
 team        = "infra-core"
 cost_center = "infra-2026-q1"
+# Environment is no longer overridden here — full_tags takes it from
+# var.stage, which is what this override was compensating for.
 tags = {
-  Owner       = "ajay"
-  Environment = "prod"
+  Owner = "ajay"
 }

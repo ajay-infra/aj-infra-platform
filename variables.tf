@@ -7,7 +7,25 @@ variable "aws_region" {
 
 variable "environment" {
   type        = string
-  description = "Environment name: dev | staging | prod"
+  description = <<-EOT
+    Environment/cluster slug: dev | staging | prod. Load-bearing for resource
+    NAMES and the remote state key, so it is not the stage vocabulary and must
+    not be renamed into it. For the Environment TAG, see var.stage.
+  EOT
+}
+
+variable "stage" {
+  type        = string
+  description = <<-EOT
+    The account's guardrail class, and the value of the Environment tag.
+    One vocabulary shared with the account name, the cluster record and the
+    SCPs — see aj-infra-context/arch/account-model.md §1.
+  EOT
+
+  validation {
+    condition     = contains(["nonprod", "sandbox", "preprod", "prod", "prodpciconn"], var.stage)
+    error_message = "stage must be one of nonprod, sandbox, preprod, prod, prodpciconn. Note prodpciconn IS production — anything testing for production must match it too."
+  }
 }
 
 variable "color" {
