@@ -96,8 +96,7 @@ Stage 2: infra-platform (this repo)
 | `arc.tf` | Actions Runner Controller Helm release + Pod Identity |
 | `gatekeeper.tf` | OPA Gatekeeper Helm release |
 | `outputs.tf` | IAM role ARNs, installed chart versions |
-| `versions.json` | Single source of truth for all pinned versions |
-| `envs/*.tfvars` | Per-environment variable overrides |
+| `envs/example.tfvars` | Reference only. Real per-cluster values live in `aj-infra-release/envs/workload/<mode>/<cluster>/platform.tfvars` |
 
 ---
 
@@ -107,7 +106,7 @@ Stage 2: infra-platform (this repo)
 - **Helm provider uses exec auth** — `aws eks get-token` via AWS CLI exec plugin. Requires valid AWS credentials at apply time. GitHub OIDC in CI.
 - **Cilium values from EKS output** — `cilium_helm_values` output from the EKS module is consumed directly. No duplication of values.
 - **Add-on toggles** — `install_karpenter`, `install_cert_manager`, etc. let dev environments skip expensive or unnecessary add-ons.
-- **versions.json** — single source of truth for all chart versions. Keep in sync with `variables.tf` defaults.
+- **Chart versions come from `platform.tfvars`** in aj-infra-release, per cluster. `variables.tf` holds fallback defaults. A `versions.json` here used to claim to be the single source of truth; nothing read it and it had to be hand-synced, so it was deleted 2026-08-30.
 
 ---
 
@@ -126,8 +125,8 @@ terraform init \
   -backend-config="key=dev/aj-infra-platform/terraform.tfstate" \
   -backend-config="region=us-east-1"
 
-terraform plan -var-file=envs/dev.tfvars
-terraform apply -var-file=envs/dev.tfvars
+terraform plan -var-file=envs/example.tfvars
+terraform apply -var-file=envs/example.tfvars
 ```
 
 ---
