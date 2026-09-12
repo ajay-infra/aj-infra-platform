@@ -76,7 +76,9 @@ resource "aws_eks_pod_identity_association" "keda" {
 # ── Helm ──────────────────────────────────────────────────────────────────────
 
 resource "helm_release" "keda" {
-  count = var.install_keda ? 1 : 0
+  # Both flags: the component is on, AND this module (not ArgoCD) owns the
+  # release. See variables.tf "Chart ownership".
+  count = var.install_keda && var.install_keda_chart ? 1 : 0
 
   name       = "keda"
   repository = "https://kedacore.github.io/charts"

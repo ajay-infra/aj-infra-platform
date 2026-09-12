@@ -72,7 +72,9 @@ resource "aws_eks_pod_identity_association" "external_dns" {
 # ── Helm ──────────────────────────────────────────────────────────────────────
 
 resource "helm_release" "external_dns" {
-  count = var.install_external_dns ? 1 : 0
+  # Both flags: the component is on, AND this module (not ArgoCD) owns the
+  # release. See variables.tf "Chart ownership".
+  count = var.install_external_dns && var.install_external_dns_chart ? 1 : 0
 
   name       = "external-dns"
   repository = "https://kubernetes-sigs.github.io/external-dns/"

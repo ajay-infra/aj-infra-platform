@@ -5,7 +5,9 @@
 # No IAM role needed — Gatekeeper only talks to the K8s API server, not AWS.
 
 resource "helm_release" "gatekeeper" {
-  count = var.install_gatekeeper ? 1 : 0
+  # Both flags: the component is on, AND this module (not ArgoCD) owns the
+  # release. See variables.tf "Chart ownership".
+  count = var.install_gatekeeper && var.install_gatekeeper_chart ? 1 : 0
 
   name       = "gatekeeper"
   repository = "https://open-policy-agent.github.io/gatekeeper/charts"

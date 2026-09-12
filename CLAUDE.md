@@ -18,16 +18,18 @@ Reads remote state from `aj-tf-module-eks` and installs all Kubernetes add-ons v
 | **cert-manager** | jetstack/cert-manager | — | `install_cert_manager` |
 | **External Secrets** | external-secrets/external-secrets | Pod Identity | `install_external_secrets` |
 | **metrics-server** | kubernetes-sigs/metrics-server | — | `install_metrics_server` |
-| **OPA Gatekeeper** | open-policy-agent/gatekeeper | — | `install_gatekeeper` |
-| **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` |
+| **OPA Gatekeeper** | open-policy-agent/gatekeeper | — | `install_gatekeeper` · chart: `install_gatekeeper_chart` |
+| **KEDA** | kedacore/keda | Pod Identity (SQS + CW) | `install_keda` · chart: `install_keda_chart` |
 | **APISIX** | apache/apisix | none (no AWS calls) | `install_apisix` |
 | **OPA** | open-policy-agent/kube-mgmt | none | `install_opa` |
-| **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` |
+| **external-dns** | kubernetes-sigs/external-dns | Pod Identity (Route53) | `install_external_dns` · chart: `install_external_dns_chart` |
 | **ACK ACM + Route53** | aws-controllers-k8s | Pod Identity (ACM, Route53) | `install_ack_certificates` |
 | **Falcon sensor** | crowdstrike/falcon-sensor | — | `install_falcon` |
 | **ARC controller** | actions/gha-runner-scale-set-controller | Pod Identity | `install_arc` |
 
 Also creates IAM policies + Pod Identity associations for every add-on that calls AWS APIs.
+
+**Chart ownership.** For KEDA, external-dns and Gatekeeper, `install_<x>` creates the labelled namespace, IAM and Pod Identity; `install_<x>_chart` (default `true`) is whether this module *also* runs the Helm release. A cluster whose ArgoCD hub syncs the `aj-gitops` ApplicationSet for that component sets the chart flag `false` — otherwise Terraform and ArgoCD both own one release. Added 2026-09-12.
 
 ---
 
