@@ -4,6 +4,19 @@ All notable changes to this module are documented here. Format loosely follows [
 
 ## [Unreleased]
 
+### Added — `install_<x>_chart`: chart ownership split from component ownership
+KEDA, external-dns and Gatekeeper were each installed **twice**: `helm_release` here (gated on `install_<x>`), and an ArgoCD ApplicationSet in `aj-gitops/applicationsets/workload/<class>/` — same release name, same namespace, same chart version. Two owners of one release; ArgoCD's `selfHeal` would revert whatever Terraform applied. Never bit, because no cluster has ever existed. Same shape as the ArgoCD double-install removed across five PRs on 2026-09-07.
+
+Decided 2026-09-12: **ArgoCD owns those three controllers**, matching the hub model (`aj-infra-central` installs only Cilium, ArgoCD and Keycloak; ESO, AWS LBC, cert-manager and metrics-server come from an ApplicationSet). Chart versions stay pinned in the workload release bundle, which is where staged rollout lives.
+
+But the IAM policy, role, Pod Identity association and labelled namespace are gated on the same `install_<x>` flag as the release, so turning the flag off would strand the ArgoCD-installed chart with no credentials and no namespace. Hence three new flags:
+
+- `install_keda_chart`, `install_external_dns_chart`, `install_gatekeeper_chart` — **default `true`**, so v1.1.0 consumers see no change. `install_<x>` keeps meaning "this component is on this cluster" and still creates everything the chart needs; the new flag only decides whether *this module* runs the `helm_release`.
+
+Additive, MINOR. `dev` sets all three `false` in `aj-infra` alongside the pin move.
+
+## [v1.1.0] — tagged at `4be1c08`
+
 ### Fixed — every platform namespace was created unlabelled, and three things broke quietly
 Eleven namespaces were created by `create_namespace = true` on a `helm_release`, which produces a namespace with **no labels at all**.
 

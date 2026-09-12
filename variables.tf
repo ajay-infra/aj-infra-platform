@@ -137,6 +137,38 @@ variable "install_keda" {
   default     = true
 }
 
+# ── Chart ownership ─────────────────────────────────────────────────────────
+# `install_<x>` means "this component is part of this cluster": its labelled
+# namespace, IAM policy and role, and Pod Identity association are created here,
+# because the chart needs every one of them regardless of who installs it.
+#
+# `install_<x>_chart` is narrower: does THIS module also run the Helm release.
+# Set it false when ArgoCD owns the release — aj-gitops carries an
+# ApplicationSet for keda, external-dns and gatekeeper, and until 2026-09-12
+# both this module and that ApplicationSet installed the same release name into
+# the same namespace at the same chart version. Two owners of one release, the
+# same shape as the ArgoCD double-install removed on 2026-09-07.
+#
+# Defaults stay true so v1.1.0 consumers see no change. A cluster whose hub
+# syncs the ApplicationSet sets these false in its platform.tfvars.
+variable "install_keda_chart" {
+  type        = bool
+  description = "Run the KEDA Helm release from this module. false when ArgoCD owns it (aj-gitops applicationsets/workload/<class>/keda.yaml); namespace, IAM and Pod Identity are still created here when install_keda is true."
+  default     = true
+}
+
+variable "install_external_dns_chart" {
+  type        = bool
+  description = "Run the external-dns Helm release from this module. false when ArgoCD owns it (aj-gitops applicationsets/workload/<class>/external-dns.yaml); namespace, IAM and Pod Identity are still created here when install_external_dns is true."
+  default     = true
+}
+
+variable "install_gatekeeper_chart" {
+  type        = bool
+  description = "Run the Gatekeeper Helm release from this module. false when ArgoCD owns it (aj-gitops applicationsets/workload/<class>/gatekeeper.yaml); the gatekeeper-system namespace is still created here when install_gatekeeper is true."
+  default     = true
+}
+
 variable "install_apisix" {
   type        = bool
   description = <<-EOT
