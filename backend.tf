@@ -1,10 +1,5 @@
 terraform {
-  backend "s3" {
-    # Configured via -backend-config or backend.hcl at init time
-    # key    = "${environment}/aj-infra-platform/terraform.tfstate"
-    # bucket = "<your-tf-state-bucket>"
-    # region = "us-east-1"
-    # dynamodb_table = "<your-lock-table>"
-    # encrypt = true
-  }
+  # Partial backend on purpose: bucket, key, region and the S3 lockfile arrive
+  # from ajtf at init (aj-infra-context/arch/ajtf-v1.md §2) — nothing is typed here.
+  backend "s3" {}
 }
